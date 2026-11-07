@@ -1,5 +1,16 @@
 @extends('layouts.app')
 
+@push('head')
+<link rel="stylesheet" href="https://unpkg.com/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://unpkg.com/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://unpkg.com/flatpickr@4.6.13/dist/l10n/ja.js"></script>
+<style>
+    .flatpickr-time {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    }
+</style>
+@endpush
+
 @section('title', ($isEdit ? $rally->title . ' の管理' : 'スタンプラリー作成') . ' | Stampippi')
 
 @section('content')
@@ -98,12 +109,12 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">開催開始日時（空欄なら開始日制限なし・常設）</label>
-                    <input type="datetime-local" name="starts_at" value="{{ old('starts_at', $rally->starts_at?->format('Y-m-d\TH:i')) }}" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm bg-white">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">開催開始日時（24時間表記・空欄なら常設）</label>
+                    <input type="text" name="starts_at" value="{{ old('starts_at', $rally->starts_at?->format('Y-m-d H:i')) }}" placeholder="例: 2026-05-10 09:00" class="flatpickr-datetime w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm bg-white font-mono">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">開催終了日時（空欄なら終了日制限なし・常設）</label>
-                    <input type="datetime-local" name="ends_at" value="{{ old('ends_at', $rally->ends_at?->format('Y-m-d\TH:i')) }}" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm bg-white">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">開催終了日時（24時間表記・空欄なら常設）</label>
+                    <input type="text" name="ends_at" value="{{ old('ends_at', $rally->ends_at?->format('Y-m-d H:i')) }}" placeholder="例: 2026-05-10 18:00" class="flatpickr-datetime w-full rounded-xl border border-slate-300 px-3 py-1.5 text-sm bg-white font-mono">
                 </div>
             </div>
 
@@ -152,12 +163,12 @@
 
                     <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-700 mb-1">打刻可能 開始日時 (空欄=常設)</label>
-                            <input type="datetime-local" name="available_from" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white">
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">打刻可能 開始日時 (24時間表記・空欄=常設)</label>
+                            <input type="text" name="available_from" placeholder="例: 2026-05-10 09:00" class="flatpickr-datetime w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white font-mono">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-700 mb-1">打刻可能 終了日時 (空欄=常設)</label>
-                            <input type="datetime-local" name="available_until" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white">
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">打刻可能 終了日時 (24時間表記・空欄=常設)</label>
+                            <input type="text" name="available_until" placeholder="例: 2026-05-10 18:00" class="flatpickr-datetime w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white font-mono">
                         </div>
                     </div>
 
@@ -280,10 +291,10 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-600">開始〜終了(空欄=常設)</label>
+                                        <label class="block text-[10px] font-bold text-slate-600">開始〜終了(24時間・空欄=常設)</label>
                                         <div class="space-y-1">
-                                            <input type="datetime-local" name="available_from" value="{{ $loc->available_from?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
-                                            <input type="datetime-local" name="available_until" value="{{ $loc->available_until?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
+                                            <input type="text" name="available_from" value="{{ $loc->available_from?->format('Y-m-d H:i') }}" placeholder="開始 (2026-05-10 09:00)" class="flatpickr-datetime w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white font-mono">
+                                            <input type="text" name="available_until" value="{{ $loc->available_until?->format('Y-m-d H:i') }}" placeholder="終了 (2026-05-10 18:00)" class="flatpickr-datetime w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white font-mono">
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-end gap-1.5">
@@ -456,4 +467,21 @@
 </script>
 @endpush
 @endif
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr('.flatpickr-datetime', {
+                enableTime: true,
+                time_24hr: true,
+                dateFormat: 'Y-m-d H:i',
+                locale: 'ja',
+                allowInput: true,
+                disableMobile: true,
+            });
+        }
+    });
+</script>
+@endpush
 
