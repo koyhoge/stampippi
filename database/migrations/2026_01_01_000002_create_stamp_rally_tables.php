@@ -48,7 +48,7 @@ return new class extends Migration
             $table->timestamp('available_from')->nullable();
             $table->timestamp('available_until')->nullable();
             $table->string('stamp_icon_type')->default('preset'); // preset | custom
-            $table->string('stamp_icon_value')->default('star');
+            $table->text('stamp_icon_value')->default('star');
             $table->string('stamp_color')->default('#4F46E5');
             $table->integer('sort_order')->default(0);
             $table->timestamps();

@@ -201,6 +201,30 @@ class StampRallyFlowTest extends TestCase
         $this->assertTrue($location->hasCustomImage());
         Storage::disk('public')->assertExists($location->stamp_icon_value);
 
+        // 6c. Switching service-wide stamp storage driver to 'database' (serverless inline Data URI plugin)
+        config(['stamp.image_driver' => 'database']);
+        $fakeStampSvg2 = UploadedFile::fake()->createWithContent(
+            'inline_stamp.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#10B981"/></svg>'
+        );
+
+        $this->actingAs($coStaff)
+            ->put("/my/rallies/{$rally->slug}/locations/{$location->id}", [
+                'name' => '大田区産業プラザPiO',
+                'description' => '東京会場',
+                'latitude' => 35.5588810,
+                'longitude' => 139.7240960,
+                'radius_meters' => 150,
+                'stamp_icon_value' => '__custom__',
+                'stamp_icon_image' => $fakeStampSvg2,
+                'stamp_color' => '#4F46E5',
+            ])
+            ->assertRedirect();
+
+        $location->refresh();
+        $this->assertStringStartsWith('data:', $location->stamp_icon_value);
+        $this->assertStringStartsWith('data:', $location->iconImageUrl());
+
         // 7. Player attempts check-in from too far away (Tokyo Station ~14km away) -> Fails
         $farResponse = $this->actingAs($player)
             ->postJson("/rallies/{$rally->slug}/locations/{$location->id}/checkin", [

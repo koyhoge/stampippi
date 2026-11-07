@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\StampStorage\StampImageStorageManager;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -103,15 +104,7 @@ class StampLocation extends Model
             return null;
         }
 
-        if (
-            str_starts_with($this->stamp_icon_value, 'http://')
-            || str_starts_with($this->stamp_icon_value, 'https://')
-            || str_starts_with($this->stamp_icon_value, '/')
-        ) {
-            return $this->stamp_icon_value;
-        }
-
-        return asset('storage/' . ltrim($this->stamp_icon_value, '/'));
+        return app(StampImageStorageManager::class)->url($this->stamp_icon_value);
     }
 
     public function iconEmoji(): string

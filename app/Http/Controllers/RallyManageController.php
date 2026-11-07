@@ -6,9 +6,9 @@ use App\Models\Group;
 use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
+use App\Services\StampStorage\StampImageStorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -212,8 +212,11 @@ class RallyManageController extends Controller
             ->with('status', 'スタンプラリー基本情報を更新しました。');
     }
 
-    public function storeLocation(Request $request, StampRally $rally): RedirectResponse
-    {
+    public function storeLocation(
+        Request $request,
+        StampRally $rally,
+        StampImageStorageManager $stampStorage
+    ): RedirectResponse {
         abort_unless($request->user()->canManageRally($rally), 403, 'このスタンプラリーにベニューを追加する権限がありません。');
 
         $validated = $request->validate([
@@ -234,7 +237,7 @@ class RallyManageController extends Controller
 
         if ($request->hasFile('stamp_icon_image')) {
             $iconType = 'custom';
-            $iconValue = $request->file('stamp_icon_image')->store('stamps', 'public');
+            $iconValue = $stampStorage->store($request->file('stamp_icon_image'));
         } else {
             $iconType = 'preset';
             $iconValue = $validated['stamp_icon_value'] ?? 'star';
@@ -258,8 +261,12 @@ class RallyManageController extends Controller
             ->with('status', "スタンプロケーション（ベニュー）「{$validated['name']}」を追加しました！");
     }
 
-    public function updateLocation(Request $request, StampRally $rally, StampLocation $location): RedirectResponse
-    {
+    public function updateLocation(
+        Request $request,
+        StampRally $rally,
+        StampLocation $location,
+        StampImageStorageManager $stampStorage
+    ): RedirectResponse {
         abort_unless($request->user()->canManageRally($rally), 403, 'このベニューを更新する権限がありません。');
         abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404, '指定されたベニューはこのスタンプラリーに存在しません。');
 
@@ -287,10 +294,10 @@ class RallyManageController extends Controller
                 $location->hasCustomImage()
                 && ! StampLocation::where('id', '!=', $location->id)->where('stamp_icon_value', $location->stamp_icon_value)->exists()
             ) {
-                Storage::disk('public')->delete($location->stamp_icon_value);
+                $stampStorage->delete($location->stamp_icon_value);
             }
             $iconType = 'custom';
-            $iconValue = $request->file('stamp_icon_image')->store('stamps', 'public');
+            $iconValue = $stampStorage->store($request->file('stamp_icon_image'));
         } elseif ($validated['stamp_icon_value'] !== '__custom__') {
             $iconType = 'preset';
             $iconValue = $validated['stamp_icon_value'];

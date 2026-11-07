@@ -51,6 +51,7 @@ composer install
 ```bash
 cp .env.example .env
 php artisan key:generate
+php artisan storage:link
 touch database/database.sqlite
 php artisan migrate:fresh --seed
 ```
@@ -103,6 +104,19 @@ DB_SSLMODE=require
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
+
+# スタンプ画像ストレージ ドライバ設定 (public / s3 / database または独自プラグイン)
+# 1) S3互換外部ストレージ (Cloudflare R2 / AWS S3 / GCS) を使う場合:
+STAMP_IMAGE_DRIVER=s3
+STAMP_IMAGE_PUBLIC_URL=https://cdn.your-domain.example.com
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_DEFAULT_REGION=auto
+AWS_BUCKET=stampippi-assets
+AWS_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+
+# 2) 外部バケットを使わず DB (Neon Postgres等) にインライン保存する場合:
+# STAMP_IMAGE_DRIVER=database
 ```
 
 ---
