@@ -303,6 +303,12 @@ class RallyManageController extends Controller
             $iconType = 'custom';
             $iconValue = $stampStorage->store($request->file('stamp_icon_image'));
         } elseif ($validated['stamp_icon_value'] !== '__custom__') {
+            if (
+                $location->hasCustomImage()
+                && ! StampLocation::where('id', '!=', $location->id)->where('stamp_icon_value', $location->stamp_icon_value)->exists()
+            ) {
+                $stampStorage->delete($location->stamp_icon_value);
+            }
             $iconType = 'preset';
             $iconValue = $validated['stamp_icon_value'];
         }
@@ -325,10 +331,21 @@ class RallyManageController extends Controller
             ->with('status', "ロケーション「{$location->name}」を更新しました。");
     }
 
-    public function destroyLocation(Request $request, StampRally $rally, StampLocation $location): RedirectResponse
-    {
+    public function destroyLocation(
+        Request $request,
+        StampRally $rally,
+        StampLocation $location,
+        StampImageStorageManager $stampStorage
+    ): RedirectResponse {
         abort_unless($request->user()->canManageRally($rally), 403, 'このベニューを削除する権限がありません。');
         abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404, '指定されたベニューはこのスタンプラリーに存在しません。');
+
+        if (
+            $location->hasCustomImage()
+            && ! StampLocation::where('id', '!=', $location->id)->where('stamp_icon_value', $location->stamp_icon_value)->exists()
+        ) {
+            $stampStorage->delete($location->stamp_icon_value);
+        }
 
         $name = $location->name;
         $location->delete();

@@ -10,35 +10,89 @@ use Illuminate\Validation\ValidationException;
 
 class SvgSanitizer
 {
+    private const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
     /** @var array<int, string> */
-    private const BLOCKED_TAGS = [
-        'script',
-        'foreignobject',
-        'iframe',
-        'frame',
-        'frameset',
-        'object',
-        'embed',
-        'applet',
-        'audio',
-        'video',
-        'meta',
-        'link',
-        'base',
-        'animate',
-        'animatemotion',
-        'animatetransform',
-        'set',
-        'handler',
-        'listener',
+    private const ALLOWED_EXTENSIONS = [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+        'gif',
+        'svg',
+    ];
+
+    /** @var array<int, string> */
+    private const ALLOWED_TAGS = [
+        'svg',
+        'g',
+        'path',
+        'circle',
+        'ellipse',
+        'line',
+        'polyline',
+        'polygon',
+        'rect',
+        'text',
+        'tspan',
+        'defs',
+        'lineargradient',
+        'radialgradient',
+        'stop',
+        'clippath',
+        'mask',
+        'pattern',
+        'symbol',
+        'title',
+        'desc',
+        'filter',
+        'feblend',
+        'fecolormatrix',
+        'fecomponenttransfer',
+        'fecomposite',
+        'feconvolvematrix',
+        'fediffuselighting',
+        'fedisplacementmap',
+        'fedropshadow',
+        'feflood',
+        'fefunca',
+        'fefuncb',
+        'fefuncg',
+        'fefuncr',
+        'fegaussianblur',
+        'femerge',
+        'femergenode',
+        'femorphology',
+        'feoffset',
+        'fespecularlighting',
+        'fetile',
+        'feturbulence',
     ];
 
     public static function isSvg(UploadedFile $file): bool
     {
-        $ext = strtolower($file->getClientOriginalExtension() ?: ($file->guessExtension() ?: ''));
+        $guessed = strtolower((string) $file->guessExtension());
+        $clientExt = strtolower((string) $file->getClientOriginalExtension());
         $mime = strtolower((string) $file->getMimeType());
 
-        return $ext === 'svg' || str_contains($mime, 'svg');
+        return $guessed === 'svg' || $clientExt === 'svg' || str_contains($mime, 'svg');
+    }
+
+    /**
+     * クライアントのファイル名に依存せず、検証済みの安全な拡張子を決定する
+     */
+    public static function resolveSafeExtension(UploadedFile $file): string
+    {
+        if (self::isSvg($file)) {
+            return 'svg';
+        }
+
+        $guessed = strtolower((string) $file->guessExtension());
+        if (in_array($guessed, self::ALLOWED_EXTENSIONS, true)) {
+            return $guessed === 'jpeg' ? 'jpg' : $guessed;
+        }
+
+        return 'png';
     }
 
     /**
@@ -76,15 +130,23 @@ class SvgSanitizer
         libxml_clear_errors();
         libxml_use_internal_errors($prev);
 
-        if (! $loaded || ! $dom->documentElement || strtolower($dom->documentElement->localName ?? '') !== 'svg') {
+        $root = $dom->documentElement;
+        if (! $loaded || ! $root || strtolower($root->localName ?: $root->nodeName) !== 'svg') {
             throw ValidationException::withMessages([
                 'stamp_icon_image' => ['有効なSVGファイルとして読み込めませんでした。'],
             ]);
         }
 
-        self::cleanNode($dom->documentElement);
+        if ($root->namespaceURI !== null && $root->namespaceURI !== '' && $root->namespaceURI !== self::SVG_NAMESPACE) {
+            throw ValidationException::withMessages([
+                'stamp_icon_image' => ['SVGの名前空間が不正です。'],
+            ]);
+        }
 
-        $output = $dom->saveXML($dom->documentElement);
+        self::cleanNode($root);
+        $root->setAttribute('xmlns', self::SVG_NAMESPACE);
+
+        $output = $dom->saveXML($root);
         if (! is_string($output) || trim($output) === '') {
             throw ValidationException::withMessages([
                 'stamp_icon_image' => ['SVGファイルのサニタイズに失敗しました。'],
@@ -96,7 +158,6 @@ class SvgSanitizer
 
     private static function cleanNode(DOMNode $node): void
     {
-        // 子ノードを逆順で走査して危険な要素や処理命令を除去
         for ($i = $node->childNodes->length - 1; $i >= 0; $i--) {
             $child = $node->childNodes->item($i);
             if (! $child) {
@@ -109,8 +170,14 @@ class SvgSanitizer
             }
 
             if ($child instanceof DOMElement) {
+                $ns = $child->namespaceURI;
                 $tagName = strtolower($child->localName ?: $child->nodeName);
-                if (in_array($tagName, self::BLOCKED_TAGS, true)) {
+
+                // SVG 以外の名前空間 (XHTML / MathML 等) またはホワイトリスト外のタグはすべて除去
+                if (
+                    ($ns !== null && $ns !== '' && $ns !== self::SVG_NAMESPACE)
+                    || ! in_array($tagName, self::ALLOWED_TAGS, true)
+                ) {
                     $node->removeChild($child);
                     continue;
                 }
@@ -138,39 +205,25 @@ class SvgSanitizer
             $value = trim((string) $attr->nodeValue);
             $normalizedValue = preg_replace('/[\x00-\x20]+/', '', strtolower($value)) ?? '';
 
-            // on* イベントハンドラ属性はすべて除去
-            if (str_starts_with($name, 'on') || str_starts_with($localName, 'on')) {
+            // on* イベントハンドラ属性、および外部参照属性 (href/src/xlink:href 等) はすべて除去
+            if (
+                str_starts_with($name, 'on')
+                || str_starts_with($localName, 'on')
+                || in_array($localName, ['href', 'src', 'action', 'formaction', 'ychannelselector', 'xchannelselector'], true)
+            ) {
                 $toRemove[] = $attr->nodeName;
                 continue;
             }
 
-            // href / xlink:href / src 等の外部参照・javascript:/data: スキームを除去
-            if (in_array($localName, ['href', 'src', 'action', 'formaction'], true)) {
-                if (! str_starts_with($value, '#')) {
-                    $toRemove[] = $attr->nodeName;
-                    continue;
-                }
-            }
-
-            // style 属性内の expression() / url(javascript:...) / @import 等を除去
-            if ($localName === 'style') {
-                if (
-                    str_contains($normalizedValue, 'javascript:')
-                    || str_contains($normalizedValue, 'vbscript:')
-                    || str_contains($normalizedValue, 'data:')
-                    || str_contains($normalizedValue, 'expression(')
-                    || str_contains($normalizedValue, '@import')
-                    || str_contains($normalizedValue, 'behavior:')
-                ) {
-                    $toRemove[] = $attr->nodeName;
-                    continue;
-                }
-            }
-
-            // 任意の属性値に javascript: / vbscript: が含まれる場合は除去
+            // style 属性または任意の属性値に url() / javascript: / data: / @import / expression() が含まれる場合は除去
             if (
                 str_contains($normalizedValue, 'javascript:')
                 || str_contains($normalizedValue, 'vbscript:')
+                || str_contains($normalizedValue, 'data:')
+                || str_contains($normalizedValue, 'expression(')
+                || str_contains($normalizedValue, '@import')
+                || str_contains($normalizedValue, 'behavior:')
+                || ($localName === 'style' && str_contains($normalizedValue, 'url('))
             ) {
                 $toRemove[] = $attr->nodeName;
             }
@@ -181,4 +234,3 @@ class SvgSanitizer
         }
     }
 }
-

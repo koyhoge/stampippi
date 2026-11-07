@@ -140,21 +140,23 @@ class GroupManageController extends Controller
     {
         abort_unless($request->user()->isOwnerOfGroup($group), 403, 'メンバーの削除はグループオーナーまたはシステム管理者のみ行えます。');
 
-        $ownerCount = $group->members()->wherePivot('role', 'owner')->count();
-        $isTargetOwner = $group->members()
-            ->where('users.id', $user->id)
-            ->wherePivot('role', 'owner')
-            ->exists();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($group, $user) {
+            $ownerCount = $group->members()->wherePivot('role', 'owner')->lockForUpdate()->count();
+            $isTargetOwner = $group->members()
+                ->where('users.id', $user->id)
+                ->wherePivot('role', 'owner')
+                ->exists();
 
-        if ($isTargetOwner && $ownerCount <= 1) {
-            return back()->withErrors([
-                'identifier' => '最後のオーナーを削除することはできません。',
-            ]);
-        }
+            if ($isTargetOwner && $ownerCount <= 1) {
+                return back()->withErrors([
+                    'identifier' => '最後のオーナーを削除することはできません。',
+                ]);
+            }
 
-        $group->members()->detach($user->id);
+            $group->members()->detach($user->id);
 
-        return back()->with('status', "@{$user->handle} さんをメンバーから外しました。");
+            return back()->with('status', "@{$user->handle} さんをメンバーから外しました。");
+        });
     }
 }
 

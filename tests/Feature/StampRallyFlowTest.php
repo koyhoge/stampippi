@@ -178,7 +178,7 @@ class StampRallyFlowTest extends TestCase
         Storage::fake('public');
         $fakeStampSvg = UploadedFile::fake()->createWithContent(
             'custom_stamp.svg',
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="alert(1)"><script>alert(2)</script><circle cx="32" cy="32" r="28" fill="#4F46E5" onclick="evil()"/></svg>'
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="alert(1)"><script>alert(2)</script><style>@import url("https://evil.example/x.css");</style><a xmlns="http://www.w3.org/1999/xhtml" href="https://evil.example">link</a><use href="#loop"/><circle cx="32" cy="32" r="28" fill="#4F46E5" onclick="evil()"/></svg>'
         );
 
         $this->actingAs($coStaff)
@@ -200,6 +200,9 @@ class StampRallyFlowTest extends TestCase
         Storage::disk('public')->assertExists($location->stamp_icon_value);
         $savedSvgContent = Storage::disk('public')->get($location->stamp_icon_value);
         $this->assertStringNotContainsString('<script', $savedSvgContent);
+        $this->assertStringNotContainsString('<style', $savedSvgContent);
+        $this->assertStringNotContainsString('<a', $savedSvgContent);
+        $this->assertStringNotContainsString('<use', $savedSvgContent);
         $this->assertStringNotContainsString('onload', $savedSvgContent);
         $this->assertStringNotContainsString('onclick', $savedSvgContent);
         $this->assertStringContainsString('<circle', $savedSvgContent);
@@ -430,7 +433,9 @@ class StampRallyFlowTest extends TestCase
             });
 
         $this->get('/auth/github/callback')
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('dashboard'))
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN');
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
@@ -439,6 +444,16 @@ class StampRallyFlowTest extends TestCase
             'email' => 'octocat@github.example.com',
             'is_admin' => 1,
         ]);
+
+        // 12d. Once an OAuth admin exists, a later user claiming the same username after rename is NOT auto-promoted
+        $renamedSquatter = User::create([
+            'handle' => 'later_user',
+            'name' => 'Later User',
+            'email' => 'later@example.com',
+            'github_id' => '99999999',
+        ]);
+        $this->assertFalse($renamedSquatter->syncInitialAdminStatus('github', 'octocat_dev', 'later@example.com', '99999999'));
+        $this->assertFalse($renamedSquatter->fresh()->isAdmin());
     }
 
     public function test_location_period_window_is_enforced_when_specified(): void

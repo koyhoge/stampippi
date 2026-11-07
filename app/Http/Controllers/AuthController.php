@@ -55,22 +55,31 @@ class AuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Google OAuth callback failed', ['error' => $e->getMessage()]);
+
             return redirect()->route('login')->withErrors([
-                'login' => 'Google 認証に失敗しました: ' . $e->getMessage(),
+                'login' => 'Google 認証に失敗しました。もう一度お試しください。',
             ]);
         }
 
-        $user = User::where('google_id', $googleUser->getId())
-            ->orWhere('email', $googleUser->getEmail())
-            ->first();
+        $googleId = (string) $googleUser->getId();
+        $email = $googleUser->getEmail() ? strtolower(trim($googleUser->getEmail())) : null;
+
+        $user = User::where('google_id', $googleId)->first();
+
+        if (! $user && $email && ! str_ends_with($email, '@users.noreply.github.com')) {
+            $user = User::where('email', $email)
+                ->whereNull('google_id')
+                ->first();
+        }
 
         if ($user) {
             $user->update([
-                'google_id' => $googleUser->getId(),
+                'google_id' => $googleId,
                 'avatar_url' => $googleUser->getAvatar() ?: $user->avatar_url,
             ]);
         } else {
-            $baseHandle = Str::slug(Str::before($googleUser->getEmail(), '@'), '_');
+            $baseHandle = Str::slug($email ? Str::before($email, '@') : 'google_user', '_');
             if (empty($baseHandle)) {
                 $baseHandle = 'user';
             }
@@ -80,11 +89,15 @@ class AuthController extends Controller
                 $handle = $baseHandle . '_' . $counter++;
             }
 
+            $resolvedEmail = ($email && ! User::where('email', $email)->exists())
+                ? $email
+                : "{$handle}_{$googleId}@google.oauth.local";
+
             $user = User::create([
                 'handle' => strtolower($handle),
                 'name' => $googleUser->getName() ?: $handle,
-                'email' => $googleUser->getEmail(),
-                'google_id' => $googleUser->getId(),
+                'email' => $resolvedEmail,
+                'google_id' => $googleId,
                 'avatar_url' => $googleUser->getAvatar(),
             ]);
         }
@@ -92,8 +105,8 @@ class AuthController extends Controller
         $user->syncInitialAdminStatus(
             'google',
             null,
-            $googleUser->getEmail(),
-            (string) $googleUser->getId()
+            $email,
+            $googleId
         );
 
         Auth::login($user, true);
@@ -119,17 +132,23 @@ class AuthController extends Controller
         try {
             $githubUser = Socialite::driver('github')->user();
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('GitHub OAuth callback failed', ['error' => $e->getMessage()]);
+
             return redirect()->route('login')->withErrors([
-                'login' => 'GitHub 認証に失敗しました: ' . $e->getMessage(),
+                'login' => 'GitHub 認証に失敗しました。もう一度お試しください。',
             ]);
         }
 
         $githubId = (string) $githubUser->getId();
-        $email = $githubUser->getEmail();
+        $email = $githubUser->getEmail() ? strtolower(trim($githubUser->getEmail())) : null;
 
-        $user = User::where('github_id', $githubId)
-            ->when($email, fn ($query) => $query->orWhere('email', $email))
-            ->first();
+        $user = User::where('github_id', $githubId)->first();
+
+        if (! $user && $email) {
+            $user = User::where('email', $email)
+                ->whereNull('github_id')
+                ->first();
+        }
 
         if ($user) {
             $user->update([
@@ -148,7 +167,9 @@ class AuthController extends Controller
                 $handle = $baseHandle . '_' . $counter++;
             }
 
-            $resolvedEmail = $email ?: ($handle . '@users.noreply.github.com');
+            $resolvedEmail = ($email && ! User::where('email', $email)->exists())
+                ? $email
+                : ($handle . '@users.noreply.github.com');
 
             $user = User::create([
                 'handle' => $handle,

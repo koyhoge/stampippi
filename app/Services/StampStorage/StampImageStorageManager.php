@@ -94,9 +94,12 @@ class StampImageStorageManager
 
     public function url(string $storedValue): string
     {
+        if (str_starts_with($storedValue, 'data:')) {
+            return str_starts_with($storedValue, 'data:image/') ? $storedValue : '';
+        }
+
         if (
-            str_starts_with($storedValue, 'data:')
-            || str_starts_with($storedValue, 'http://')
+            str_starts_with($storedValue, 'http://')
             || str_starts_with($storedValue, 'https://')
             || str_starts_with($storedValue, '/')
         ) {

@@ -74,6 +74,19 @@ class User extends Authenticatable
             return false;
         }
 
+        // すでに OAuth 経由のシステム管理者が存在する場合は、GitHub ユーザー名変更（リネーム）後の
+        // 第三者による旧ユーザー名再取得での乗っ取りを防ぐため、自動昇格を行わない（初回ブートストラップ限定）
+        $hasExistingOauthAdmin = self::where('is_admin', true)
+            ->where('id', '!=', $this->id)
+            ->where(function ($q) {
+                $q->whereNotNull('github_id')->orWhereNotNull('google_id');
+            })
+            ->exists();
+
+        if ($hasExistingOauthAdmin) {
+            return false;
+        }
+
         if (! empty($this->getAttributes()['password'] ?? null)) {
             \Illuminate\Support\Facades\Log::warning('APP_INITIAL_ADMINS に一致しましたが、パスワード設定済みアカウントのため自動昇格をスキップしました。', [
                 'user_id' => $this->id,

@@ -52,7 +52,7 @@ class DashboardController extends Controller
             });
 
         if ($keyword !== '') {
-            $like = '%' . $keyword . '%';
+            $like = '%' . addcslashes($keyword, '%_\\') . '%';
             $publicQuery->where(function ($q) use ($like) {
                 $q->where('title', 'like', $like)
                     ->orWhere('description', 'like', $like)
@@ -211,14 +211,17 @@ class DashboardController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403, '管理者権限の解除はシステム管理者のみ行えます。');
 
-        if (User::where('is_admin', true)->count() <= 1 && $user->isAdmin()) {
-            return back()->withErrors([
-                'identifier' => '最後の管理者を解除することはできません。',
-            ]);
-        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+            $adminCount = User::where('is_admin', true)->lockForUpdate()->count();
+            if ($adminCount <= 1 && $user->isAdmin()) {
+                return back()->withErrors([
+                    'identifier' => '最後の管理者を解除することはできません。',
+                ]);
+            }
 
-        $user->forceFill(['is_admin' => false])->save();
+            $user->forceFill(['is_admin' => false])->save();
 
-        return back()->with('status', "@{$user->handle} さんの管理者権限を解除しました。");
+            return back()->with('status', "@{$user->handle} さんの管理者権限を解除しました。");
+        });
     }
 }

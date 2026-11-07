@@ -120,16 +120,32 @@ class StampCheckinService
                 ]
             );
 
-            $stamp = UserStamp::create([
-                'user_id' => $user->id,
-                'stamp_rally_id' => $rally->id,
-                'stamp_location_id' => $location->id,
-                'checkin_lat' => $latitude,
-                'checkin_lng' => $longitude,
-                'accuracy_meters' => $accuracy,
-                'distance_meters' => $distanceMeters,
-                'stamped_at' => $now,
-            ]);
+            $stamp = UserStamp::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'stamp_location_id' => $location->id,
+                ],
+                [
+                    'stamp_rally_id' => $rally->id,
+                    'checkin_lat' => $latitude,
+                    'checkin_lng' => $longitude,
+                    'accuracy_meters' => $accuracy,
+                    'distance_meters' => $distanceMeters,
+                    'stamped_at' => $now,
+                ]
+            );
+
+            if (! $stamp->wasRecentlyCreated) {
+                return [
+                    'success' => true,
+                    'status' => 'already_stamped',
+                    'message' => "「{$location->name}」のスタンプは既に獲得済みです！",
+                    'distance_meters' => $distanceMeters,
+                    'radius_meters' => $location->radius_meters,
+                    'stamp' => $stamp,
+                    'is_rally_completed' => $this->isCompleted($user, $rally),
+                ];
+            }
 
             $stampedCount = UserStamp::where('user_id', $user->id)
                 ->where('stamp_rally_id', $rally->id)

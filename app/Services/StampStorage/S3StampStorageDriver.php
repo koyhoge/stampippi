@@ -20,8 +20,8 @@ class S3StampStorageDriver implements StampImageStorageDriver
 
     public function store(UploadedFile $file): string
     {
-        $extension = $file->getClientOriginalExtension() ?: ($file->guessExtension() ?: 'png');
-        $filename = Str::ulid() . '.' . strtolower($extension);
+        $extension = SvgSanitizer::resolveSafeExtension($file);
+        $filename = Str::ulid() . '.' . $extension;
         $directory = trim($this->directory, '/');
 
         $options = [
