@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Organization;
+use App\Models\Group;
 use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
@@ -24,7 +24,7 @@ class StampRallyFlowTest extends TestCase
             ->assertSee('Stampippi')
             ->assertSee('ログイン');
 
-        $this->get('/orgs/phpcon')
+        $this->get('/groups/phpcon')
             ->assertStatus(200)
             ->assertSee('PHPカンファレンススタンプラリー運営');
 
@@ -39,7 +39,7 @@ class StampRallyFlowTest extends TestCase
             ->assertSee('グランフロント大阪');
     }
 
-    public function test_organization_and_series_and_rally_hierarchy_with_gps_checkin(): void
+    public function test_group_and_series_and_rally_hierarchy_with_gps_checkin(): void
     {
         $owner = User::create([
             'handle' => 'koyhoge',
@@ -62,31 +62,31 @@ class StampRallyFlowTest extends TestCase
             'password' => 'password',
         ]);
 
-        // 1. Owner creates an Organization
+        // 1. Owner creates a Group
         $this->actingAs($owner)
-            ->post('/my/organizations', [
+            ->post('/my/groups', [
                 'slug' => 'phpcon',
                 'name' => 'PHPカンファレンス運営',
                 'description' => '全国PHPカンファレンス運営グループ',
             ])
             ->assertRedirect();
 
-        $org = Organization::where('slug', 'phpcon')->firstOrFail();
+        $group = Group::where('slug', 'phpcon')->firstOrFail();
 
         // 2. Owner adds registered user by @handle
         $this->actingAs($owner)
-            ->post("/my/organizations/{$org->slug}/members", [
+            ->post("/my/groups/{$group->slug}/members", [
                 'identifier' => '@staff_member',
                 'role' => 'member',
             ])
             ->assertRedirect();
 
-        $this->assertTrue($coStaff->canManageOrganization($org));
+        $this->assertTrue($coStaff->canManageGroup($group));
 
-        // 3. Co-staff creates a RallySeries under the Organization
+        // 3. Co-staff creates a RallySeries under the Group
         $this->actingAs($coStaff)
             ->post('/my/series', [
-                'organization_id' => $org->id,
+                'group_id' => $group->id,
                 'title' => 'PHPカンファレンススタンプラリー',
                 'slug' => 'phpcon-series',
                 'description' => '各年版を含むシリーズ',
@@ -99,7 +99,7 @@ class StampRallyFlowTest extends TestCase
         // 4. Create a permanent StampRally (starts_at = null, ends_at = null)
         $this->actingAs($coStaff)
             ->post('/my/rallies', [
-                'organization_id' => $org->id,
+                'group_id' => $group->id,
                 'rally_series_id' => $series->id,
                 'title' => '日本全国PHPカンファレンススタンプラリー 2026',
                 'slug' => 'phpcon-2026',

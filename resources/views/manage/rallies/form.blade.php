@@ -30,12 +30,12 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（個人 / Organization）</label>
-                    <select name="organization_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（個人 / グループ）</label>
+                    <select name="group_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
                         <option value="">👤 個人所有 ({{ '@' . auth()->user()->handle }})</option>
-                        @foreach ($organizations as $org)
-                            <option value="{{ $org->id }}" @selected(old('organization_id', $rally->organization_id) == $org->id)>
-                                🏢 Organization: {{ $org->name }} ({{ '@' . $org->slug }})
+                        @foreach ($groups as $group)
+                            <option value="{{ $group->id }}" @selected(old('group_id', $rally->group_id) == $group->id)>
+                                👥 グループ: {{ $group->name }} ({{ '@' . $group->slug }})
                             </option>
                         @endforeach
                     </select>

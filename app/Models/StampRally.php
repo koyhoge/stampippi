@@ -13,7 +13,7 @@ class StampRally extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organization_id',
+        'group_id',
         'rally_series_id',
         'creator_id',
         'slug',
@@ -43,9 +43,9 @@ class StampRally extends Model
         return 'slug';
     }
 
-    public function organization(): BelongsTo
+    public function group(): BelongsTo
     {
-        return $this->belongsTo(Organization::class);
+        return $this->belongsTo(Group::class);
     }
 
     public function series(): BelongsTo
@@ -115,15 +115,14 @@ class StampRally extends Model
 
     public function ownerName(): string
     {
-        if ($this->organization) {
-            return $this->organization->name;
+        if ($this->group) {
+            return $this->group->name;
         }
 
-        if ($this->series && $this->series->organization) {
-            return $this->series->organization->name;
+        if ($this->series && $this->series->group) {
+            return $this->series->group->name;
         }
 
         return $this->creator ? $this->creator->name : 'Unknown';
     }
 }
-

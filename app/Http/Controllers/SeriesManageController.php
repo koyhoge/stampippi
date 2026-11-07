@@ -12,11 +12,11 @@ class SeriesManageController extends Controller
 {
     public function create(Request $request): View
     {
-        $organizations = $request->user()->organizations()->orderBy('name')->get();
+        $groups = $request->user()->groups()->orderBy('name')->get();
 
         return view('manage.series.form', [
             'series' => new RallySeries(['visibility' => 'public']),
-            'organizations' => $organizations,
+            'groups' => $groups,
             'isEdit' => false,
         ]);
     }
@@ -24,19 +24,19 @@ class SeriesManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $orgIds = $user->organizations()->pluck('organizations.id')->all();
+        $groupIds = $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:rally_series,slug'],
-            'organization_id' => ['nullable', Rule::in($orgIds)],
+            'group_id' => ['nullable', Rule::in($groupIds)],
             'description' => ['nullable', 'string', 'max:2000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
         ]);
 
         $series = RallySeries::create([
             'creator_id' => $user->id,
-            'organization_id' => $validated['organization_id'] ?: null,
+            'group_id' => $validated['group_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -51,12 +51,12 @@ class SeriesManageController extends Controller
     {
         abort_unless($request->user()->canManageSeries($series), 403);
 
-        $organizations = $request->user()->organizations()->orderBy('name')->get();
+        $groups = $request->user()->groups()->orderBy('name')->get();
         $series->load('rallies.locations');
 
         return view('manage.series.form', [
             'series' => $series,
-            'organizations' => $organizations,
+            'groups' => $groups,
             'isEdit' => true,
         ]);
     }
@@ -66,7 +66,7 @@ class SeriesManageController extends Controller
         abort_unless($request->user()->canManageSeries($series), 403);
 
         $user = $request->user();
-        $orgIds = $user->organizations()->pluck('organizations.id')->all();
+        $groupIds = $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -77,13 +77,13 @@ class SeriesManageController extends Controller
                 'regex:/^[a-zA-Z0-9_-]+$/',
                 Rule::unique('rally_series', 'slug')->ignore($series->id),
             ],
-            'organization_id' => ['nullable', Rule::in($orgIds)],
+            'group_id' => ['nullable', Rule::in($groupIds)],
             'description' => ['nullable', 'string', 'max:2000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
         ]);
 
         $series->update([
-            'organization_id' => $validated['organization_id'] ?: null,
+            'group_id' => $validated['group_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -94,4 +94,3 @@ class SeriesManageController extends Controller
             ->with('status', 'ラリーシリーズを更新しました。');
     }
 }
-

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Organization;
+use App\Models\Group;
 use App\Models\RallyParticipation;
 use App\Models\RallySeries;
 use App\Models\StampLocation;
@@ -43,8 +43,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Organization: PHPカンファレンス運営
-        $org = Organization::updateOrCreate(
+        // Group: PHPカンファレンス運営
+        $group = Group::updateOrCreate(
             ['slug' => 'phpcon'],
             [
                 'name' => 'PHPカンファレンススタンプラリー運営',
@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $org->members()->syncWithoutDetaching([
+        $group->members()->syncWithoutDetaching([
             $koyama->id => ['role' => 'owner'],
             $staff->id => ['role' => 'member'],
         ]);
@@ -61,7 +61,7 @@ class DatabaseSeeder extends Seeder
         $series = RallySeries::updateOrCreate(
             ['slug' => 'phpcon-stamp-rally'],
             [
-                'organization_id' => $org->id,
+                'group_id' => $group->id,
                 'creator_id' => $koyama->id,
                 'title' => 'PHPカンファレンススタンプラリー',
                 'description' => '日本全国で開催される各年のPHPカンファレンス会場（ベニュー）を巡る公式スタンプラリーシリーズです。',
@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
         $rally2026 = StampRally::updateOrCreate(
             ['slug' => 'phpcon-japan-2026'],
             [
-                'organization_id' => $org->id,
+                'group_id' => $group->id,
                 'rally_series_id' => $series->id,
                 'creator_id' => $koyama->id,
                 'title' => '日本全国PHPカンファレンススタンプラリー 2026',
@@ -144,7 +144,7 @@ class DatabaseSeeder extends Seeder
         $rally2025 = StampRally::updateOrCreate(
             ['slug' => 'phpcon-japan-2025'],
             [
-                'organization_id' => $org->id,
+                'group_id' => $group->id,
                 'rally_series_id' => $series->id,
                 'creator_id' => $staff->id,
                 'title' => '日本全国PHPカンファレンススタンプラリー 2025',
@@ -177,7 +177,7 @@ class DatabaseSeeder extends Seeder
         $permanentRally = StampRally::updateOrCreate(
             ['slug' => 'tokyo-station-landmarks'],
             [
-                'organization_id' => null,
+                'group_id' => null,
                 'rally_series_id' => null,
                 'creator_id' => $koyama->id,
                 'title' => '中央線・東京街歩き常設スタンプラリー',
@@ -245,4 +245,3 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
-

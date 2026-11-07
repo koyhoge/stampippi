@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Organization;
+use App\Models\Group;
 use App\Models\RallyParticipation;
 use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
+use App\Models\User;
 use App\Services\StampCheckinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,21 +23,21 @@ class PublicRallyController extends Controller
         }
 
         $devUsers = app()->environment('local', 'testing')
-            ? \App\Models\User::orderBy('id')->get()
+            ? User::orderBy('id')->get()
             : collect();
 
         return view('public.home', compact('devUsers'));
     }
 
-    public function showOrganization(Organization $organization): View
+    public function showGroup(Group $group): View
     {
-        $organization->load([
+        $group->load([
             'members',
             'series' => fn ($q) => $q->where('visibility', 'public')->with('rallies'),
             'rallies' => fn ($q) => $q->where('visibility', 'public')->with(['locations', 'series']),
         ]);
 
-        return view('public.organization', compact('organization'));
+        return view('public.group', compact('group'));
     }
 
     public function showSeries(Request $request, RallySeries $series): View
@@ -46,7 +47,7 @@ class PublicRallyController extends Controller
         }
 
         $series->load([
-            'organization',
+            'group',
             'creator',
             'rallies' => function ($query) use ($request, $series) {
                 if (! $request->user() || ! $request->user()->canManageSeries($series)) {
@@ -82,7 +83,7 @@ class PublicRallyController extends Controller
             abort(404);
         }
 
-        $rally->load(['organization', 'series.organization', 'creator', 'locations']);
+        $rally->load(['group', 'series.group', 'creator', 'locations']);
 
         $participation = null;
         $userStampsByLocation = collect();
@@ -182,7 +183,7 @@ class PublicRallyController extends Controller
 
     public function certificate(Request $request, StampRally $rally): View|RedirectResponse
     {
-        $rally->load(['organization', 'series', 'locations']);
+        $rally->load(['group', 'series', 'locations']);
 
         $participation = RallyParticipation::where('user_id', $request->user()->id)
             ->where('stamp_rally_id', $rally->id)
@@ -202,4 +203,3 @@ class PublicRallyController extends Controller
         return view('public.certificate', compact('rally', 'participation', 'userStamps'));
     }
 }
-

@@ -15,11 +15,11 @@ class RallyManageController extends Controller
     public function create(Request $request): View
     {
         $user = $request->user();
-        $organizations = $user->organizations()->orderBy('name')->get();
-        $orgIds = $organizations->pluck('id');
+        $groups = $user->groups()->orderBy('name')->get();
+        $groupIds = $groups->pluck('id');
 
         $seriesList = RallySeries::where('creator_id', $user->id)
-            ->when($orgIds->isNotEmpty(), fn ($q) => $q->orWhereIn('organization_id', $orgIds))
+            ->when($groupIds->isNotEmpty(), fn ($q) => $q->orWhereIn('group_id', $groupIds))
             ->orderBy('title')
             ->get();
 
@@ -27,12 +27,12 @@ class RallyManageController extends Controller
             'visibility' => 'public',
             'completion_condition' => 'all',
             'rally_series_id' => $request->query('series_id'),
-            'organization_id' => $request->query('organization_id'),
+            'group_id' => $request->query('group_id'),
         ]);
 
         return view('manage.rallies.form', [
             'rally' => $rally,
-            'organizations' => $organizations,
+            'groups' => $groups,
             'seriesList' => $seriesList,
             'presetIcons' => StampLocation::presetIcons(),
             'copyableLocations' => collect(),
@@ -43,12 +43,12 @@ class RallyManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $orgIds = $user->organizations()->pluck('organizations.id')->all();
+        $groupIds = $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:stamp_rallies,slug'],
-            'organization_id' => ['nullable', Rule::in($orgIds)],
+            'group_id' => ['nullable', Rule::in($groupIds)],
             'rally_series_id' => ['nullable', 'exists:rally_series,id'],
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
@@ -65,7 +65,7 @@ class RallyManageController extends Controller
 
         $rally = StampRally::create([
             'creator_id' => $user->id,
-            'organization_id' => $validated['organization_id'] ?: null,
+            'group_id' => $validated['group_id'] ?: null,
             'rally_series_id' => $validated['rally_series_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
@@ -88,21 +88,21 @@ class RallyManageController extends Controller
         $user = $request->user();
         abort_unless($user->canManageRally($rally), 403);
 
-        $rally->load(['locations', 'series', 'organization']);
+        $rally->load(['locations', 'series', 'group']);
 
-        $organizations = $user->organizations()->orderBy('name')->get();
-        $orgIds = $organizations->pluck('id');
+        $groups = $user->groups()->orderBy('name')->get();
+        $groupIds = $groups->pluck('id');
 
         $seriesList = RallySeries::where('creator_id', $user->id)
-            ->when($orgIds->isNotEmpty(), fn ($q) => $q->orWhereIn('organization_id', $orgIds))
+            ->when($groupIds->isNotEmpty(), fn ($q) => $q->orWhereIn('group_id', $groupIds))
             ->orderBy('title')
             ->get();
 
         $manageableRallyIds = StampRally::where('id', '!=', $rally->id)
-            ->where(function ($q) use ($user, $orgIds) {
+            ->where(function ($q) use ($user, $groupIds) {
                 $q->where('creator_id', $user->id);
-                if ($orgIds->isNotEmpty()) {
-                    $q->orWhereIn('organization_id', $orgIds);
+                if ($groupIds->isNotEmpty()) {
+                    $q->orWhereIn('group_id', $groupIds);
                 }
             })
             ->pluck('id');
@@ -114,7 +114,7 @@ class RallyManageController extends Controller
 
         return view('manage.rallies.form', [
             'rally' => $rally,
-            'organizations' => $organizations,
+            'groups' => $groups,
             'seriesList' => $seriesList,
             'presetIcons' => StampLocation::presetIcons(),
             'copyableLocations' => $copyableLocations,
@@ -127,7 +127,7 @@ class RallyManageController extends Controller
         $user = $request->user();
         abort_unless($user->canManageRally($rally), 403);
 
-        $orgIds = $user->organizations()->pluck('organizations.id')->all();
+        $groupIds = $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -138,7 +138,7 @@ class RallyManageController extends Controller
                 'regex:/^[a-zA-Z0-9_-]+$/',
                 Rule::unique('stamp_rallies', 'slug')->ignore($rally->id),
             ],
-            'organization_id' => ['nullable', Rule::in($orgIds)],
+            'group_id' => ['nullable', Rule::in($groupIds)],
             'rally_series_id' => ['nullable', 'exists:rally_series,id'],
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
@@ -154,7 +154,7 @@ class RallyManageController extends Controller
         }
 
         $rally->update([
-            'organization_id' => $validated['organization_id'] ?: null,
+            'group_id' => $validated['group_id'] ?: null,
             'rally_series_id' => $validated['rally_series_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
@@ -288,4 +288,3 @@ class RallyManageController extends Controller
             ->with('status', "過去ロケーション「{$source->name}」からベニュー情報をコピーして追加しました！");
     }
 }
-

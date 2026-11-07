@@ -26,12 +26,12 @@
             @endif
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（個人 または Organization）</label>
-                <select name="organization_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
+                <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（個人 または グループ）</label>
+                <select name="group_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
                     <option value="">👤 個人所有 ({{ '@' . auth()->user()->handle }})</option>
-                    @foreach ($organizations as $org)
-                        <option value="{{ $org->id }}" @selected(old('organization_id', $series->organization_id) == $org->id)>
-                            🏢 Organization: {{ $org->name }} ({{ '@' . $org->slug }})
+                    @foreach ($groups as $group)
+                        <option value="{{ $group->id }}" @selected(old('group_id', $series->group_id) == $group->id)>
+                            👥 グループ: {{ $group->name }} ({{ '@' . $group->slug }})
                         </option>
                     @endforeach
                 </select>
@@ -75,7 +75,7 @@
         <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-base font-bold text-slate-900">このシリーズに属するスタンプラリー ({{ $series->rallies->count() }}件)</h2>
-                <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'organization_id' => $series->organization_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl">
+                <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl">
                     ＋ このシリーズに新しいスタンプラリーを追加
                 </a>
             </div>

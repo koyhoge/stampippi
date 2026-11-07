@@ -11,11 +11,11 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = $request->user()->load('organizations');
-        $orgIds = $user->organizations->pluck('id');
+        $user = $request->user()->load('groups');
+        $groupIds = $user->groups->pluck('id');
 
         $participations = $user->participations()
-            ->with(['rally.locations', 'rally.series', 'rally.organization'])
+            ->with(['rally.locations', 'rally.series', 'rally.group'])
             ->latest('joined_at')
             ->get();
 
@@ -25,27 +25,27 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('stamp_rally_id');
 
-        $manageableSeries = RallySeries::with(['organization', 'rallies'])
-            ->where(function ($q) use ($user, $orgIds) {
+        $manageableSeries = RallySeries::with(['group', 'rallies'])
+            ->where(function ($q) use ($user, $groupIds) {
                 $q->where('creator_id', $user->id);
-                if ($orgIds->isNotEmpty()) {
-                    $q->orWhereIn('organization_id', $orgIds);
+                if ($groupIds->isNotEmpty()) {
+                    $q->orWhereIn('group_id', $groupIds);
                 }
             })
             ->latest()
             ->get();
 
-        $manageableRallies = StampRally::with(['organization', 'series', 'locations'])
-            ->where(function ($q) use ($user, $orgIds) {
+        $manageableRallies = StampRally::with(['group', 'series', 'locations'])
+            ->where(function ($q) use ($user, $groupIds) {
                 $q->where('creator_id', $user->id);
-                if ($orgIds->isNotEmpty()) {
-                    $q->orWhereIn('organization_id', $orgIds);
+                if ($groupIds->isNotEmpty()) {
+                    $q->orWhereIn('group_id', $groupIds);
                 }
             })
             ->latest()
             ->get();
 
-        $publicRallies = StampRally::with(['organization', 'series', 'locations'])
+        $publicRallies = StampRally::with(['group', 'series', 'locations'])
             ->where('visibility', 'public')
             ->orderByDesc('starts_at')
             ->orderByDesc('id')
@@ -61,4 +61,3 @@ class DashboardController extends Controller
         ));
     }
 }
-

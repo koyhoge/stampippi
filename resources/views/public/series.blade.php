@@ -8,9 +8,9 @@
         <div class="flex flex-wrap items-center justify-between gap-4 mb-3">
             <div class="flex items-center gap-2">
                 <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">📚 ラリーシリーズ</span>
-                @if ($series->organization)
-                    <a href="{{ route('orgs.show', $series->organization) }}" class="text-xs font-semibold text-slate-600 hover:text-indigo-600">
-                        🏢 {{ $series->organization->name }} ({{ '@' . $series->organization->slug }})
+                @if ($series->group)
+                    <a href="{{ route('groups.show', $series->group) }}" class="text-xs font-semibold text-slate-600 hover:text-indigo-600">
+                        👥 {{ $series->group->name }} ({{ '@' . $series->group->slug }})
                     </a>
                 @else
                     <span class="text-xs text-slate-500">作成者: {{ $series->creator->name }} ({{ '@' . $series->creator->handle }})</span>
@@ -20,7 +20,7 @@
             @auth
                 @if (auth()->user()->canManageSeries($series))
                     <div class="flex items-center gap-2">
-                        <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'organization_id' => $series->organization_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">
+                        <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">
                             ＋ このシリーズにラリーを追加
                         </a>
                         <a href="{{ route('my.series.edit', $series) }}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg">

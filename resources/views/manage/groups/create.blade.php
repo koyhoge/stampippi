@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Organization 作成 | Stampippi')
+@section('title', 'グループ作成 | Stampippi')
 
 @section('content')
 <div class="max-w-xl mx-auto bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6">
     <div>
-        <h1 class="text-2xl font-extrabold text-slate-900">🏢 Organization（グループ）を作成</h1>
+        <h1 class="text-2xl font-extrabold text-slate-900">👥 グループ (Group) を作成</h1>
         <p class="text-xs text-slate-500 mt-1">
             ラリーシリーズや複数のスタンプラリーをチームで共同運営・引き継ぎするためのグループを作成します。
         </p>
     </div>
 
-    <form method="POST" action="{{ route('my.organizations.store') }}" class="space-y-4">
+    <form method="POST" action="{{ route('my.groups.store') }}" class="space-y-4">
         @csrf
         <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Organization ID (slug) ※半角英数・ハイフン</label>
-            <input type="text" name="slug" value="{{ old('slug') }}" required placeholder="sample-org" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">
+            <label class="block text-xs font-bold text-slate-700 mb-1">グループ ID (slug) ※半角英数・ハイフン</label>
+            <input type="text" name="slug" value="{{ old('slug') }}" required placeholder="sample-group" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">
         </div>
         <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">表示名</label>

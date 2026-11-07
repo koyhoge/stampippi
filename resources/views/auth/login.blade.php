@@ -18,7 +18,7 @@
                 <span class="text-[10px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded">LOCAL DEV</span>
             </div>
             <p class="text-xs text-amber-800">
-                Google OAuth の設定前でも、シード済みのテストユーザーで即座にログインして全機能（Organization管理・ラリー作成・参加打刻）を検証できます。
+                Google OAuth の設定前でも、シード済みのテストユーザーで即座にログインして全機能（グループ管理・ラリー作成・参加打刻）を検証できます。
             </p>
             <div class="flex flex-wrap gap-3 pt-1">
                 @foreach ($devUsers as $devUser)

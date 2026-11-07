@@ -13,9 +13,9 @@
                         📚 {{ $rally->series->title }}
                     </a>
                 @endif
-                @if ($rally->organization)
-                    <a href="{{ route('orgs.show', $rally->organization) }}" class="font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-full transition">
-                        🏢 {{ $rally->organization->name }}
+                @if ($rally->group)
+                    <a href="{{ route('groups.show', $rally->group) }}" class="font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-full transition">
+                        👥 {{ $rally->group->name }}
                     </a>
                 @else
                     <span class="text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">

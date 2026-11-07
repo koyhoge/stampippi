@@ -2,52 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Organization;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-class OrganizationManageController extends Controller
+class GroupManageController extends Controller
 {
     public function create(): View
     {
-        return view('manage.organizations.create');
+        return view('manage.groups.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'slug' => ['required', 'string', 'max:48', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:organizations,slug'],
+            'slug' => ['required', 'string', 'max:48', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:groups,slug'],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $organization = Organization::create([
+        $group = Group::create([
             'slug' => strtolower($validated['slug']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
         ]);
 
-        $organization->members()->attach($request->user()->id, ['role' => 'owner']);
+        $group->members()->attach($request->user()->id, ['role' => 'owner']);
 
-        return redirect()->route('my.organizations.edit', $organization)
-            ->with('status', "Organization「{$organization->name}」を作成しました！");
+        return redirect()->route('my.groups.edit', $group)
+            ->with('status', "グループ「{$group->name}」を作成しました！");
     }
 
-    public function edit(Request $request, Organization $organization): View
+    public function edit(Request $request, Group $group): View
     {
-        abort_unless($request->user()->canManageOrganization($organization), 403);
+        abort_unless($request->user()->canManageGroup($group), 403);
 
-        $organization->load(['members', 'series', 'rallies']);
+        $group->load(['members', 'series', 'rallies']);
 
-        return view('manage.organizations.edit', compact('organization'));
+        return view('manage.groups.edit', compact('group'));
     }
 
-    public function update(Request $request, Organization $organization): RedirectResponse
+    public function update(Request $request, Group $group): RedirectResponse
     {
-        abort_unless($request->user()->canManageOrganization($organization), 403);
+        abort_unless($request->user()->canManageGroup($group), 403);
 
         $validated = $request->validate([
             'slug' => [
@@ -55,25 +55,25 @@ class OrganizationManageController extends Controller
                 'string',
                 'max:48',
                 'regex:/^[a-zA-Z0-9_-]+$/',
-                Rule::unique('organizations', 'slug')->ignore($organization->id),
+                Rule::unique('groups', 'slug')->ignore($group->id),
             ],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $organization->update([
+        $group->update([
             'slug' => strtolower($validated['slug']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
         ]);
 
-        return redirect()->route('my.organizations.edit', $organization)
-            ->with('status', 'Organization 情報を更新しました。');
+        return redirect()->route('my.groups.edit', $group)
+            ->with('status', 'グループ情報を更新しました。');
     }
 
-    public function addMember(Request $request, Organization $organization): RedirectResponse
+    public function addMember(Request $request, Group $group): RedirectResponse
     {
-        abort_unless($request->user()->isOwnerOfOrganization($organization), 403, 'メンバーの追加は Organization オーナーのみ行えます。');
+        abort_unless($request->user()->isOwnerOfGroup($group), 403, 'メンバーの追加はグループオーナーのみ行えます。');
 
         $validated = $request->validate([
             'identifier' => ['required', 'string', 'max:255'],
@@ -92,23 +92,23 @@ class OrganizationManageController extends Controller
             ])->withInput();
         }
 
-        $organization->members()->syncWithoutDetaching([
+        $group->members()->syncWithoutDetaching([
             $targetUser->id => ['role' => $validated['role']],
         ]);
 
-        $organization->members()->updateExistingPivot($targetUser->id, [
+        $group->members()->updateExistingPivot($targetUser->id, [
             'role' => $validated['role'],
         ]);
 
         return back()->with('status', "{$targetUser->name} (@{$targetUser->handle}) さんを {$validated['role']} として追加しました。");
     }
 
-    public function removeMember(Request $request, Organization $organization, User $user): RedirectResponse
+    public function removeMember(Request $request, Group $group, User $user): RedirectResponse
     {
-        abort_unless($request->user()->isOwnerOfOrganization($organization), 403);
+        abort_unless($request->user()->isOwnerOfGroup($group), 403);
 
-        $ownerCount = $organization->members()->wherePivot('role', 'owner')->count();
-        $isTargetOwner = $organization->members()
+        $ownerCount = $group->members()->wherePivot('role', 'owner')->count();
+        $isTargetOwner = $group->members()
             ->where('users.id', $user->id)
             ->wherePivot('role', 'owner')
             ->exists();
@@ -119,7 +119,7 @@ class OrganizationManageController extends Controller
             ]);
         }
 
-        $organization->members()->detach($user->id);
+        $group->members()->detach($user->id);
 
         return back()->with('status', "@{$user->handle} さんをメンバーから外しました。");
     }

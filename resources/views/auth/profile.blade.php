@@ -8,7 +8,7 @@
         <div>
             <h1 class="text-2xl font-extrabold text-slate-900">👤 プロフィール設定</h1>
             <p class="text-xs text-slate-500 mt-1">
-                ユーザーID（@handle）と表示名を変更できます。Organizationへのメンバー追加時はここで設定した <strong>{{ '@' . $user->handle }}</strong> を使用します。
+                ユーザーID（@handle）と表示名を変更できます。グループへのメンバー追加時はここで設定した <strong>{{ '@' . $user->handle }}</strong> を使用します。
             </p>
         </div>
 

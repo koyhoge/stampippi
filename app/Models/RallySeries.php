@@ -14,7 +14,7 @@ class RallySeries extends Model
     protected $table = 'rally_series';
 
     protected $fillable = [
-        'organization_id',
+        'group_id',
         'creator_id',
         'slug',
         'title',
@@ -27,9 +27,9 @@ class RallySeries extends Model
         return 'slug';
     }
 
-    public function organization(): BelongsTo
+    public function group(): BelongsTo
     {
-        return $this->belongsTo(Organization::class);
+        return $this->belongsTo(Group::class);
     }
 
     public function creator(): BelongsTo
@@ -47,11 +47,10 @@ class RallySeries extends Model
 
     public function ownerName(): string
     {
-        if ($this->organization) {
-            return $this->organization->name;
+        if ($this->group) {
+            return $this->group->name;
         }
 
         return $this->creator ? $this->creator->name : 'Unknown';
     }
 }
-

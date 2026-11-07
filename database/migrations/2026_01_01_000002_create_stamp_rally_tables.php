@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('rally_series', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('group_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('creator_id')->constrained('users')->cascadeOnDelete();
             $table->string('slug')->unique();
             $table->string('title');
@@ -21,7 +21,7 @@ return new class extends Migration
 
         Schema::create('stamp_rallies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('group_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('rally_series_id')->nullable()->constrained('rally_series')->nullOnDelete();
             $table->foreignId('creator_id')->constrained('users')->cascadeOnDelete();
             $table->string('slug')->unique();
@@ -90,4 +90,3 @@ return new class extends Migration
         Schema::dropIfExists('rally_series');
     }
 };
-

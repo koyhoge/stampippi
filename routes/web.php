@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\OrganizationManageController;
+use App\Http\Controllers\GroupManageController;
 use App\Http\Controllers\PublicRallyController;
 use App\Http\Controllers\RallyManageController;
 use App\Http\Controllers\SeriesManageController;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public pages
 Route::get('/', [PublicRallyController::class, 'home'])->name('home');
-Route::get('/orgs/{organization:slug}', [PublicRallyController::class, 'showOrganization'])->name('orgs.show');
+Route::get('/groups/{group:slug}', [PublicRallyController::class, 'showGroup'])->name('groups.show');
 Route::get('/series/{series:slug}', [PublicRallyController::class, 'showSeries'])->name('series.show');
 Route::get('/rallies/{rally:slug}', [PublicRallyController::class, 'showRally'])->name('rallies.show');
 
@@ -38,14 +38,14 @@ Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Creator & Organization management
+    // Creator & Group management
     Route::prefix('my')->name('my.')->group(function () {
-        Route::get('/organizations/create', [OrganizationManageController::class, 'create'])->name('organizations.create');
-        Route::post('/organizations', [OrganizationManageController::class, 'store'])->name('organizations.store');
-        Route::get('/organizations/{organization:slug}/edit', [OrganizationManageController::class, 'edit'])->name('organizations.edit');
-        Route::put('/organizations/{organization:slug}', [OrganizationManageController::class, 'update'])->name('organizations.update');
-        Route::post('/organizations/{organization:slug}/members', [OrganizationManageController::class, 'addMember'])->name('organizations.members.store');
-        Route::delete('/organizations/{organization:slug}/members/{user}', [OrganizationManageController::class, 'removeMember'])->name('organizations.members.destroy');
+        Route::get('/groups/create', [GroupManageController::class, 'create'])->name('groups.create');
+        Route::post('/groups', [GroupManageController::class, 'store'])->name('groups.store');
+        Route::get('/groups/{group:slug}/edit', [GroupManageController::class, 'edit'])->name('groups.edit');
+        Route::put('/groups/{group:slug}', [GroupManageController::class, 'update'])->name('groups.update');
+        Route::post('/groups/{group:slug}/members', [GroupManageController::class, 'addMember'])->name('groups.members.store');
+        Route::delete('/groups/{group:slug}/members/{user}', [GroupManageController::class, 'removeMember'])->name('groups.members.destroy');
 
         Route::get('/series/create', [SeriesManageController::class, 'create'])->name('series.create');
         Route::post('/series', [SeriesManageController::class, 'store'])->name('series.store');

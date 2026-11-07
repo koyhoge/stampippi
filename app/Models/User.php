@@ -34,9 +34,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function organizations(): BelongsToMany
+    public function groups(): BelongsToMany
     {
-        return $this->belongsToMany(Organization::class)
+        return $this->belongsToMany(Group::class)
             ->withPivot('role')
             ->withTimestamps();
     }
@@ -61,26 +61,26 @@ class User extends Authenticatable
         return $this->hasMany(UserStamp::class);
     }
 
-    public function canManageOrganization(Organization $organization): bool
+    public function canManageGroup(Group $group): bool
     {
-        return $this->organizations()
-            ->where('organizations.id', $organization->id)
+        return $this->groups()
+            ->where('groups.id', $group->id)
             ->exists();
     }
 
-    public function isOwnerOfOrganization(Organization $organization): bool
+    public function isOwnerOfGroup(Group $group): bool
     {
-        return $this->organizations()
-            ->where('organizations.id', $organization->id)
+        return $this->groups()
+            ->where('groups.id', $group->id)
             ->wherePivot('role', 'owner')
             ->exists();
     }
 
     public function canManageSeries(RallySeries $series): bool
     {
-        if ($series->organization_id) {
-            return $this->organizations()
-                ->where('organizations.id', $series->organization_id)
+        if ($series->group_id) {
+            return $this->groups()
+                ->where('groups.id', $series->group_id)
                 ->exists();
         }
 
@@ -89,19 +89,18 @@ class User extends Authenticatable
 
     public function canManageRally(StampRally $rally): bool
     {
-        if ($rally->organization_id) {
-            return $this->organizations()
-                ->where('organizations.id', $rally->organization_id)
+        if ($rally->group_id) {
+            return $this->groups()
+                ->where('groups.id', $rally->group_id)
                 ->exists();
         }
 
-        if ($rally->rally_series_id && $rally->series && $rally->series->organization_id) {
-            return $this->organizations()
-                ->where('organizations.id', $rally->series->organization_id)
+        if ($rally->rally_series_id && $rally->series && $rally->series->group_id) {
+            return $this->groups()
+                ->where('groups.id', $rally->series->group_id)
                 ->exists();
         }
 
         return (int) $rally->creator_id === (int) $this->id;
     }
 }
-

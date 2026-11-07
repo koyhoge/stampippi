@@ -11,12 +11,12 @@
             <h1 class="text-2xl font-extrabold text-slate-900">
                 {{ $user->name }} <span class="text-base font-semibold text-indigo-600">({{ '@' . $user->handle }})</span>
             </h1>
-            <p class="text-xs text-slate-500">{{ $user->email }} — Organizationへの招待時は <strong>{{ '@' . $user->handle }}</strong> を伝えてください</p>
+            <p class="text-xs text-slate-500">{{ $user->email }} — グループへの招待時は <strong>{{ '@' . $user->handle }}</strong> を伝えてください</p>
         </div>
 
         <div class="flex flex-wrap gap-2.5">
-            <a href="{{ route('my.organizations.create') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-xl transition">
-                🏢 ＋ Organization 作成
+            <a href="{{ route('my.groups.create') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                👥 ＋ グループ作成
             </a>
             <a href="{{ route('my.series.create') }}" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-4 py-2.5 rounded-xl transition">
                 📚 ＋ ラリーシリーズ作成
@@ -122,33 +122,33 @@
         @endif
     </section>
 
-    <!-- Organizations Management -->
+    <!-- Groups Management -->
     <section class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold text-slate-900">🏢 所属 Organization（グループ）</h2>
+                <h2 class="text-xl font-bold text-slate-900">👥 所属グループ (Groups)</h2>
                 <p class="text-xs text-slate-500">複数人でラリーシリーズやスタンプラリーを共同運営・引き継ぎできます</p>
             </div>
-            <a href="{{ route('my.organizations.create') }}" class="text-xs font-bold text-indigo-600 hover:underline">＋ 新規作成</a>
+            <a href="{{ route('my.groups.create') }}" class="text-xs font-bold text-indigo-600 hover:underline">＋ 新規作成</a>
         </div>
 
-        @if ($user->organizations->isEmpty())
-            <p class="text-sm text-slate-500 bg-white rounded-xl p-5 border border-slate-200">所属している Organization はありません。</p>
+        @if ($user->groups->isEmpty())
+            <p class="text-sm text-slate-500 bg-white rounded-xl p-5 border border-slate-200">所属しているグループはありません。</p>
         @else
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                @foreach ($user->organizations as $org)
+                @foreach ($user->groups as $group)
                     <div class="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col justify-between gap-3">
                         <div>
                             <div class="flex items-center justify-between text-xs mb-1">
-                                <span class="font-bold text-indigo-600">{{ '@' . $org->slug }}</span>
-                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">{{ $org->pivot->role }}</span>
+                                <span class="font-bold text-indigo-600">{{ '@' . $group->slug }}</span>
+                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">{{ $group->pivot->role }}</span>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">{{ $org->name }}</h3>
-                            <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ $org->description }}</p>
+                            <h3 class="text-base font-bold text-slate-900">{{ $group->name }}</h3>
+                            <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ $group->description }}</p>
                         </div>
                         <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-                            <a href="{{ route('orgs.show', $org) }}" class="text-slate-600 hover:underline">公開ページ</a>
-                            <a href="{{ route('my.organizations.edit', $org) }}" class="font-bold text-indigo-600 hover:underline">⚙️ 管理・メンバー追加</a>
+                            <a href="{{ route('groups.show', $group) }}" class="text-slate-600 hover:underline">公開ページ</a>
+                            <a href="{{ route('my.groups.edit', $group) }}" class="font-bold text-indigo-600 hover:underline">⚙️ 管理・メンバー追加</a>
                         </div>
                     </div>
                 @endforeach
@@ -171,7 +171,7 @@
                     <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between gap-4">
                         <div>
                             <div class="text-xs text-slate-500 mb-0.5">
-                                所有: {{ $series->organization ? '🏢 ' . $series->organization->name : '👤 個人 (' . '@' . $user->handle . ')' }}
+                                所有: {{ $series->group ? '👥 ' . $series->group->name : '👤 個人 (' . '@' . $user->handle . ')' }}
                                 ／ 状態: <strong>{{ $series->visibility }}</strong>
                             </div>
                             <h3 class="text-base font-bold text-slate-900">{{ $series->title }}</h3>
