@@ -7,7 +7,7 @@ use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\SampleDataSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +19,7 @@ class StampRallyFlowTest extends TestCase
 
     public function test_seeded_public_pages_render_correctly(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seed(SampleDataSeeder::class);
 
         $this->get('/')
             ->assertStatus(200)
