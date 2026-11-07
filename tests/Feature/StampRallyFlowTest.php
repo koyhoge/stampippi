@@ -225,6 +225,83 @@ class StampRallyFlowTest extends TestCase
         $this->assertStringStartsWith('data:', $location->stamp_icon_value);
         $this->assertStringStartsWith('data:', $location->iconImageUrl());
 
+        // 6d. Switching to 's3' (S3StampStorageDriver with custom CloudFront/CDN base URL)
+        Storage::fake('s3');
+        config([
+            'stamp.image_driver' => 's3',
+            'stamp.drivers.s3.public_base_url' => 'https://cdn.stampippi.example.com',
+        ]);
+        app(\App\Services\StampStorage\StampImageStorageManager::class)->extend('s3', function () {
+            return new \App\Services\StampStorage\S3StampStorageDriver(
+                disk: 's3',
+                directory: 'stamps',
+                publicBaseUrl: 'https://cdn.stampippi.example.com'
+            );
+        });
+
+        $fakeS3Svg = UploadedFile::fake()->createWithContent(
+            's3_stamp.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="#F59E0B"/></svg>'
+        );
+
+        $this->actingAs($coStaff)
+            ->put("/my/rallies/{$rally->slug}/locations/{$location->id}", [
+                'name' => '大田区産業プラザPiO',
+                'description' => '東京会場',
+                'latitude' => 35.5588810,
+                'longitude' => 139.7240960,
+                'radius_meters' => 150,
+                'stamp_icon_value' => '__custom__',
+                'stamp_icon_image' => $fakeS3Svg,
+                'stamp_color' => '#4F46E5',
+            ])
+            ->assertRedirect();
+
+        $location->refresh();
+        Storage::disk('s3')->assertExists($location->stamp_icon_value);
+        $this->assertStringStartsWith('https://cdn.stampippi.example.com/stamps/', $location->iconImageUrl());
+
+        // 6e. Switching to 'laravel_cloud' (LaravelCloudObjectStorageDriver via LARAVEL_CLOUD_DISK_CONFIG)
+        $_SERVER['LARAVEL_CLOUD_DISK_CONFIG'] = json_encode([
+            [
+                'disk' => 'cloud-stamps-bucket',
+                'access_key_id' => 'test-key',
+                'access_key_secret' => 'test-secret',
+                'bucket' => 'stampippi-cloud',
+                'url' => 'https://fls-example.laravel.cloud',
+                'endpoint' => 'https://example.r2.cloudflarestorage.com',
+                'region' => 'auto',
+                'is_default' => true,
+            ],
+        ]);
+        Storage::fake('cloud-stamps-bucket');
+        config(['stamp.image_driver' => 'laravel_cloud']);
+
+        $cloudDriver = app(\App\Services\StampStorage\StampImageStorageManager::class)->driver('laravel_cloud');
+        $this->assertSame('cloud-stamps-bucket', $cloudDriver->resolveDiskName());
+
+        $fakeCloudSvg = UploadedFile::fake()->createWithContent(
+            'cloud_stamp.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="#EC4899"/></svg>'
+        );
+
+        $this->actingAs($coStaff)
+            ->put("/my/rallies/{$rally->slug}/locations/{$location->id}", [
+                'name' => '大田区産業プラザPiO',
+                'description' => '東京会場',
+                'latitude' => 35.5588810,
+                'longitude' => 139.7240960,
+                'radius_meters' => 150,
+                'stamp_icon_value' => '__custom__',
+                'stamp_icon_image' => $fakeCloudSvg,
+                'stamp_color' => '#4F46E5',
+            ])
+            ->assertRedirect();
+
+        $location->refresh();
+        Storage::disk('cloud-stamps-bucket')->assertExists($location->stamp_icon_value);
+        unset($_SERVER['LARAVEL_CLOUD_DISK_CONFIG']);
+
         // 7. Player attempts check-in from too far away (Tokyo Station ~14km away) -> Fails
         $farResponse = $this->actingAs($player)
             ->postJson("/rallies/{$rally->slug}/locations/{$location->id}/checkin", [

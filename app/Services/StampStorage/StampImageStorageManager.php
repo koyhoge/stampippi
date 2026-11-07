@@ -60,6 +60,28 @@ class StampImageStorageManager
             );
         }
 
+        if ($driverClass === S3StampStorageDriver::class) {
+            return new S3StampStorageDriver(
+                disk: (string) ($config['disk'] ?? 's3'),
+                directory: (string) ($config['directory'] ?? 'stamps'),
+                publicBaseUrl: $config['public_base_url'] ?? null,
+                useSignedUrl: (bool) ($config['use_signed_url'] ?? false),
+                signedUrlTtlMinutes: (int) ($config['signed_url_ttl_minutes'] ?? 60),
+                visibility: (string) ($config['visibility'] ?? 'public')
+            );
+        }
+
+        if ($driverClass === LaravelCloudObjectStorageDriver::class) {
+            return new LaravelCloudObjectStorageDriver(
+                disk: ! empty($config['disk']) ? (string) $config['disk'] : null,
+                directory: (string) ($config['directory'] ?? 'stamps'),
+                publicBaseUrl: $config['public_base_url'] ?? null,
+                useSignedUrl: (bool) ($config['use_signed_url'] ?? false),
+                signedUrlTtlMinutes: (int) ($config['signed_url_ttl_minutes'] ?? 60),
+                visibility: $config['visibility'] ?? 'public'
+            );
+        }
+
         return app($driverClass);
     }
 

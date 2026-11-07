@@ -105,17 +105,22 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
 
-# スタンプ画像ストレージ ドライバ設定 (public / s3 / database または独自プラグイン)
-# 1) S3互換外部ストレージ (Cloudflare R2 / AWS S3 / GCS) を使う場合:
-STAMP_IMAGE_DRIVER=s3
-STAMP_IMAGE_PUBLIC_URL=https://cdn.your-domain.example.com
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_DEFAULT_REGION=auto
-AWS_BUCKET=stampippi-assets
-AWS_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+# スタンプ画像ストレージ ドライバ設定 (public / laravel_cloud / s3 / database または独自プラグイン)
+# 1) Laravel Cloud の Object Storage を使う場合:
+#    LARAVEL_CLOUD_DISK_CONFIG が存在する場合は STAMP_IMAGE_DRIVER 未指定でも自動で選択されます。
+#    明示指定する場合は以下を設定:
+STAMP_IMAGE_DRIVER=laravel_cloud
+# STAMP_IMAGE_CLOUD_DISK=my-object-storage-disk
 
-# 2) 外部バケットを使わず DB (Neon Postgres等) にインライン保存する場合:
+# 2) AWS S3 / S3互換外部ストレージ (Cloudflare R2 / GCS) を使う場合:
+# STAMP_IMAGE_DRIVER=s3
+# STAMP_IMAGE_PUBLIC_URL=https://cdn.your-domain.example.com
+# AWS_ACCESS_KEY_ID=your_access_key
+# AWS_SECRET_ACCESS_KEY=your_secret_key
+# AWS_DEFAULT_REGION=ap-northeast-1
+# AWS_BUCKET=stampippi-assets
+
+# 3) 外部バケットを使わず DB (Neon Postgres等) にインライン保存する場合:
 # STAMP_IMAGE_DRIVER=database
 ```
 
