@@ -128,9 +128,13 @@
                          class="bg-white rounded-2xl border-2 {{ $stamp ? 'border-indigo-500 shadow-sm' : 'border-slate-200' }} p-4 sm:p-5 flex flex-col justify-between gap-4">
                         <div class="flex items-start gap-3.5 sm:gap-4">
                             <!-- Stamp Badge Visual -->
-                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 border-2 {{ $stamp ? 'bg-indigo-50 border-indigo-500' : 'bg-slate-50 border-dashed border-slate-300 opacity-50' }}"
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 border-2 overflow-hidden {{ $stamp ? 'bg-indigo-50 border-indigo-500' : 'bg-slate-50 border-dashed border-slate-300 opacity-50' }}"
                                  style="{{ $stamp ? 'border-color:' . $location->stamp_color . '; background-color:' . $location->stamp_color . '15;' : '' }}">
-                                <span class="text-2xl sm:text-3xl">{{ $location->iconEmoji() }}</span>
+                                @if ($location->hasCustomImage())
+                                    <img src="{{ $location->iconImageUrl() }}" alt="{{ $location->name }}" class="w-10 h-10 sm:w-12 sm:h-12 object-contain">
+                                @else
+                                    <span class="text-2xl sm:text-3xl">{{ $location->iconEmoji() }}</span>
+                                @endif
                                 <span class="text-[9px] sm:text-[10px] font-extrabold mt-1 uppercase tracking-wider {{ $stamp ? 'text-indigo-900' : 'text-slate-400' }}">
                                     {{ $stamp ? 'STAMPED' : 'UNSTAMPED' }}
                                 </span>
@@ -285,9 +289,12 @@
         bounds.push(latlng);
 
         const marker = L.marker(latlng).addTo(map);
+        const iconHtml = loc.icon_image_url
+            ? `<img src="${loc.icon_image_url}" alt="" style="width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
+            : `${loc.icon_emoji} `;
         marker.bindPopup(`
             <div class="text-xs space-y-1">
-                <div class="font-bold text-sm">${loc.icon_emoji} ${loc.name}</div>
+                <div class="font-bold text-sm">${iconHtml}${loc.name}</div>
                 <div class="text-slate-600">判定半径: ${loc.radius_meters}m</div>
                 <div class="text-slate-500">${loc.availability_label}</div>
                 <div class="font-bold ${loc.is_stamped ? 'text-emerald-600' : 'text-indigo-600'}">

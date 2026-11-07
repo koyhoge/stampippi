@@ -115,6 +115,11 @@ return [
         'stamp_color' => [
             'regex' => 'スタンプカラーはカラーコード形式（例: #4F46E5）で選択してください。',
         ],
+        'stamp_icon_image' => [
+            'image' => 'スタンプ絵柄画像には画像ファイルを指定してください。',
+            'mimes' => 'スタンプ絵柄画像は PNG / JPG / WebP / GIF / SVG 形式のファイルを指定してください。',
+            'max' => 'スタンプ絵柄画像のファイルサイズは 2MB 以下にしてください。',
+        ],
     ],
 
     /*
@@ -148,6 +153,7 @@ return [
         'available_from' => '打刻可能開始日時',
         'available_until' => '打刻可能終了日時',
         'stamp_icon_value' => 'スタンプアイコン',
+        'stamp_icon_image' => 'スタンプ絵柄画像',
         'stamp_color' => 'スタンプカラー',
         'sort_order' => '表示順',
         'source_location_id' => 'コピー元のベニュー',

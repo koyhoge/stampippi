@@ -53,9 +53,13 @@
                         <div class="flex items-center gap-3 min-w-0">
                             <button type="button"
                                 onclick="focusStampMarker({{ $stamp->id }})"
-                                class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border-2"
+                                class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border-2 overflow-hidden"
                                 style="border-color: {{ $stamp->location->stamp_color }}; background-color: {{ $stamp->location->stamp_color }}15;">
-                                {{ $stamp->location->iconEmoji() }}
+                                @if ($stamp->location->hasCustomImage())
+                                    <img src="{{ $stamp->location->iconImageUrl() }}" alt="" class="w-7 h-7 object-contain">
+                                @else
+                                    {{ $stamp->location->iconEmoji() }}
+                                @endif
                             </button>
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -136,11 +140,15 @@
             ? `<span style="position:absolute;top:-6px;right:-6px;background:#4F46E5;color:#fff;font-size:10px;font-weight:800;border-radius:9999px;padding:1px 5px;border:1.5px solid #fff;">${group.length}</span>`
             : '';
 
+        const innerIconHtml = primary.icon_image_url
+            ? `<img src="${primary.icon_image_url}" alt="" style="width:28px;height:28px;object-fit:contain;">`
+            : `<span>${primary.icon_emoji}</span>`;
+
         const icon = L.divIcon({
             className: '',
             html: `
                 <div style="position:relative;width:40px;height:40px;border-radius:12px;background:#ffffff;border:3px solid ${primary.stamp_color};box-shadow:0 3px 8px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;font-size:21px;">
-                    <span>${primary.icon_emoji}</span>
+                    ${innerIconHtml}
                     ${countBadge}
                 </div>
             `,
@@ -149,19 +157,24 @@
             popupAnchor: [0, -18]
         });
 
-        const itemsHtml = group.map(item => `
-            <div style="padding:6px 0;border-top:1px solid #f1f5f9;">
-                <div style="font-weight:700;font-size:13px;color:#0f172a;">
-                    ${item.icon_emoji} ${escapeHtml(item.location_name)}
+        const itemsHtml = group.map(item => {
+            const itemIconHtml = item.icon_image_url
+                ? `<img src="${item.icon_image_url}" alt="" style="width:18px;height:18px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
+                : `${item.icon_emoji} `;
+            return `
+                <div style="padding:6px 0;border-top:1px solid #f1f5f9;">
+                    <div style="font-weight:700;font-size:13px;color:#0f172a;">
+                        ${itemIconHtml}${escapeHtml(item.location_name)}
+                    </div>
+                    <div style="font-size:12px;margin-top:2px;">
+                        🗺️ ラリー: <a href="${item.rally_url}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
+                    </div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                        🕒 打刻日時: <strong>${escapeHtml(item.stamped_at)}</strong>
+                    </div>
                 </div>
-                <div style="font-size:12px;margin-top:2px;">
-                    🗺️ ラリー: <a href="${item.rally_url}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
-                </div>
-                <div style="font-size:11px;color:#64748b;margin-top:2px;">
-                    🕒 打刻日時: <strong>${escapeHtml(item.stamped_at)}</strong>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         const popupHtml = `
             <div style="min-width:220px;max-width:280px;">

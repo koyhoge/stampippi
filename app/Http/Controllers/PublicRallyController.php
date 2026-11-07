@@ -112,6 +112,7 @@ class PublicRallyController extends Controller
                 'availability_label' => $loc->availabilityLabel(),
                 'is_available_now' => $loc->isAvailableAt(),
                 'icon_emoji' => $loc->iconEmoji(),
+                'icon_image_url' => $loc->iconImageUrl(),
                 'stamp_color' => $loc->stamp_color,
                 'is_stamped' => (bool) $stamped,
                 'stamped_at' => $stamped ? $stamped->stamped_at->format('Y/m/d H:i') : null,

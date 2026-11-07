@@ -105,6 +105,7 @@ class DashboardController extends Controller
                 'latitude' => (float) $stamp->location->latitude,
                 'longitude' => (float) $stamp->location->longitude,
                 'icon_emoji' => $stamp->location->iconEmoji(),
+                'icon_image_url' => $stamp->location->iconImageUrl(),
                 'stamp_color' => $stamp->location->stamp_color,
                 'stamped_at' => $stamp->stamped_at->format('Y/m/d H:i'),
                 'distance_meters' => (int) $stamp->distance_meters,

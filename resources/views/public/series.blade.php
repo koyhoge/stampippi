@@ -67,7 +67,11 @@
                             <div class="flex flex-wrap gap-2 pt-1">
                                 @foreach ($rally->locations as $loc)
                                     <span class="inline-flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md">
-                                        <span>{{ $loc->iconEmoji() }}</span>
+                                        @if ($loc->hasCustomImage())
+                                            <img src="{{ $loc->iconImageUrl() }}" alt="" class="w-4 h-4 object-contain">
+                                        @else
+                                            <span>{{ $loc->iconEmoji() }}</span>
+                                        @endif
                                         <span>{{ $loc->name }}</span>
                                     </span>
                                 @endforeach

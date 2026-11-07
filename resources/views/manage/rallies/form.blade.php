@@ -128,7 +128,7 @@
                     右側の地図をクリックすると緯度・経度が自動入力されます。打刻可能期間を空欄にすると「常設ベニュー（いつでも打刻可）」になります。
                 </p>
 
-                <form method="POST" action="{{ route('my.rallies.locations.store', $rally) }}" class="space-y-3">
+                <form method="POST" action="{{ route('my.rallies.locations.store', $rally) }}" enctype="multipart/form-data" class="space-y-3">
                     @csrf
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">ベニュー名</label>
@@ -165,18 +165,27 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">スタンプ絵柄</label>
-                            <select name="stamp_icon_value" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white">
-                                @foreach ($presetIcons as $key => $icon)
-                                    <option value="{{ $key }}">{{ $icon['emoji'] }} {{ $icon['label'] }}</option>
-                                @endforeach
-                            </select>
+                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">プリセット絵柄</label>
+                                <select name="stamp_icon_value" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white">
+                                    @foreach ($presetIcons as $key => $icon)
+                                        <option value="{{ $key }}">{{ $icon['emoji'] }} {{ $icon['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">スタンプカラー</label>
+                                <input type="color" name="stamp_color" value="#4F46E5" class="w-full h-9 rounded-xl border border-slate-300 px-1 py-1 bg-white">
+                            </div>
                         </div>
+
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">スタンプカラー</label>
-                            <input type="color" name="stamp_color" value="#4F46E5" class="w-full h-9 rounded-xl border border-slate-300 px-1 py-1 bg-white">
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                                🖼️ オリジナル画像アップロード（任意・指定するとプリセットより優先されます / PNG・JPG・WebP・SVG 2MB以下）
+                            </label>
+                            <input type="file" name="stamp_icon_image" accept="image/*" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                         </div>
                     </div>
 
@@ -234,42 +243,67 @@
                 <div class="space-y-4">
                     @foreach ($rally->locations as $loc)
                         <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/60 space-y-3">
-                            <form method="POST" action="{{ route('my.rallies.locations.update', [$rally, $loc]) }}" class="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+                            <form method="POST" action="{{ route('my.rallies.locations.update', [$rally, $loc]) }}" enctype="multipart/form-data" class="space-y-3">
                                 @csrf
                                 @method('PUT')
-                                <div class="md:col-span-2">
-                                    <label class="block text-[10px] font-bold text-slate-600">ベニュー名</label>
-                                    <input type="text" name="name" value="{{ $loc->name }}" required class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-600">緯度 / 経度</label>
-                                    <div class="flex gap-1">
-                                        <input type="number" step="0.0000001" name="latitude" value="{{ $loc->latitude }}" required class="w-1/2 rounded-lg border border-slate-300 px-1.5 py-1.5 text-[11px] bg-white">
-                                        <input type="number" step="0.0000001" name="longitude" value="{{ $loc->longitude }}" required class="w-1/2 rounded-lg border border-slate-300 px-1.5 py-1.5 text-[11px] bg-white">
+                                <div class="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+                                    <div class="md:col-span-2 flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 bg-white overflow-hidden"
+                                             style="border-color: {{ $loc->stamp_color }};">
+                                            @if ($loc->hasCustomImage())
+                                                <img src="{{ $loc->iconImageUrl() }}" alt="{{ $loc->name }}" class="w-8 h-8 object-contain">
+                                            @else
+                                                <span class="text-xl">{{ $loc->iconEmoji() }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <label class="block text-[10px] font-bold text-slate-600">ベニュー名</label>
+                                            <input type="text" name="name" value="{{ $loc->name }}" required class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-600">緯度 / 経度</label>
+                                        <div class="flex gap-1">
+                                            <input type="number" step="0.0000001" name="latitude" value="{{ $loc->latitude }}" required class="w-1/2 rounded-lg border border-slate-300 px-1.5 py-1.5 text-[11px] bg-white">
+                                            <input type="number" step="0.0000001" name="longitude" value="{{ $loc->longitude }}" required class="w-1/2 rounded-lg border border-slate-300 px-1.5 py-1.5 text-[11px] bg-white">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-600">半径(m) / 絵柄・色</label>
+                                        <div class="flex gap-1">
+                                            <input type="number" name="radius_meters" value="{{ $loc->radius_meters }}" required class="w-16 rounded-lg border border-slate-300 px-2 py-1.5 text-xs bg-white">
+                                            <select name="stamp_icon_value" class="flex-1 rounded-lg border border-slate-300 px-1.5 py-1.5 text-xs bg-white">
+                                                @if ($loc->hasCustomImage())
+                                                    <option value="__custom__" selected>🖼️ 画像を使用中</option>
+                                                @endif
+                                                @foreach ($presetIcons as $key => $icon)
+                                                    <option value="{{ $key }}" @selected(! $loc->hasCustomImage() && $loc->stamp_icon_value === $key)>{{ $icon['emoji'] }} {{ $icon['label'] }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="color" name="stamp_color" value="{{ $loc->stamp_color }}" class="w-8 h-8 rounded border border-slate-300 bg-white">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-600">開始〜終了(空欄=常設)</label>
+                                        <div class="space-y-1">
+                                            <input type="datetime-local" name="available_from" value="{{ $loc->available_from?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
+                                            <input type="datetime-local" name="available_until" value="{{ $loc->available_until?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <input type="hidden" name="description" value="{{ $loc->description }}">
+                                        <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">保存</button>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-600">半径(m) / 絵柄</label>
-                                    <div class="flex gap-1">
-                                        <input type="number" name="radius_meters" value="{{ $loc->radius_meters }}" required class="w-16 rounded-lg border border-slate-300 px-2 py-1.5 text-xs bg-white">
-                                        <select name="stamp_icon_value" class="flex-1 rounded-lg border border-slate-300 px-1.5 py-1.5 text-xs bg-white">
-                                            @foreach ($presetIcons as $key => $icon)
-                                                <option value="{{ $key }}" @selected($loc->stamp_icon_value === $key)>{{ $icon['emoji'] }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="color" name="stamp_color" value="{{ $loc->stamp_color }}" class="w-8 h-8 rounded border border-slate-300 bg-white">
+
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 bg-white/80 rounded-lg px-3 py-1.5 border border-slate-200/80">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold">🖼️ スタンプ画像を差し替え:</span>
+                                        <input type="file" name="stamp_icon_image" accept="image/*" class="text-[11px] text-slate-600 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-50 file:text-indigo-700">
                                     </div>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-600">開始〜終了(空欄=常設)</label>
-                                    <div class="space-y-1">
-                                        <input type="datetime-local" name="available_from" value="{{ $loc->available_from?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
-                                        <input type="datetime-local" name="available_until" value="{{ $loc->available_until?->format('Y-m-d\TH:i') }}" class="w-full rounded border border-slate-300 px-1.5 py-0.5 text-[10px] bg-white">
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <input type="hidden" name="description" value="{{ $loc->description }}">
-                                    <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">保存</button>
+                                    @if ($loc->hasCustomImage())
+                                        <span class="text-indigo-600 font-semibold">現在オリジナル画像を設定中（プリセット絵柄に戻す場合はプルダウンから絵文字を選択して保存）</span>
+                                    @endif
                                 </div>
                             </form>
                             <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/70">

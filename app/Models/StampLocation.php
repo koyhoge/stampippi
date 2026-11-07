@@ -92,8 +92,34 @@ class StampLocation extends Model
         ];
     }
 
+    public function hasCustomImage(): bool
+    {
+        return $this->stamp_icon_type === 'custom' && ! empty($this->stamp_icon_value);
+    }
+
+    public function iconImageUrl(): ?string
+    {
+        if (! $this->hasCustomImage()) {
+            return null;
+        }
+
+        if (
+            str_starts_with($this->stamp_icon_value, 'http://')
+            || str_starts_with($this->stamp_icon_value, 'https://')
+            || str_starts_with($this->stamp_icon_value, '/')
+        ) {
+            return $this->stamp_icon_value;
+        }
+
+        return asset('storage/' . ltrim($this->stamp_icon_value, '/'));
+    }
+
     public function iconEmoji(): string
     {
+        if ($this->hasCustomImage()) {
+            return '🖼️';
+        }
+
         $presets = self::presetIcons();
 
         return $presets[$this->stamp_icon_value]['emoji'] ?? '💮';

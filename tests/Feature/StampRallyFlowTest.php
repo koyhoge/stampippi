@@ -9,6 +9,8 @@ use App\Models\StampRally;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class StampRallyFlowTest extends TestCase
@@ -126,6 +128,22 @@ class StampRallyFlowTest extends TestCase
         $this->actingAs($coStaff)->get('/my')->assertStatus(200);
         $this->actingAs($coStaff)->get('/my/groups')->assertStatus(200);
 
+        // Non-admin group member attempting to create a standalone rally without a series gets a Japanese validation error
+        $this->actingAs($coStaff)
+            ->from('/my/rallies/create')
+            ->post('/my/rallies', [
+                'group_id' => $group->id,
+                'rally_series_id' => null,
+                'title' => 'Standalone Rally',
+                'slug' => 'standalone-rally',
+                'visibility' => 'public',
+                'completion_condition' => 'all',
+            ])
+            ->assertRedirect('/my/rallies/create')
+            ->assertSessionHasErrors([
+                'rally_series_id' => '所属するラリーシリーズを選択してください（グループメンバーはシリーズに属するスタンプラリーのみ作成できます）。',
+            ]);
+
         $this->actingAs($coStaff)
             ->post('/my/rallies', [
                 'group_id' => $group->id,
@@ -157,6 +175,31 @@ class StampRallyFlowTest extends TestCase
             ->assertRedirect();
 
         $location = StampLocation::where('stamp_rally_id', $rally->id)->firstOrFail();
+
+        // 6b. Update location with an uploaded custom stamp image
+        Storage::fake('public');
+        $fakeStampSvg = UploadedFile::fake()->createWithContent(
+            'custom_stamp.svg',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#4F46E5"/></svg>'
+        );
+
+        $this->actingAs($coStaff)
+            ->put("/my/rallies/{$rally->slug}/locations/{$location->id}", [
+                'name' => '大田区産業プラザPiO',
+                'description' => '東京会場',
+                'latitude' => 35.5588810,
+                'longitude' => 139.7240960,
+                'radius_meters' => 150,
+                'stamp_icon_value' => 'elephant',
+                'stamp_icon_image' => $fakeStampSvg,
+                'stamp_color' => '#4F46E5',
+            ])
+            ->assertRedirect();
+
+        $location->refresh();
+        $this->assertSame('custom', $location->stamp_icon_type);
+        $this->assertTrue($location->hasCustomImage());
+        Storage::disk('public')->assertExists($location->stamp_icon_value);
 
         // 7. Player attempts check-in from too far away (Tokyo Station ~14km away) -> Fails
         $farResponse = $this->actingAs($player)

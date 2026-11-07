@@ -8,6 +8,7 @@ use App\Models\StampLocation;
 use App\Models\StampRally;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -99,8 +100,8 @@ class RallyManageController extends Controller
             'required_locations_count' => $validated['completion_condition'] === 'count'
                 ? ($validated['required_locations_count'] ?? 1)
                 : null,
-            'starts_at' => $validated['starts_at'] ?: null,
-            'ends_at' => $validated['ends_at'] ?: null,
+            'starts_at' => ($validated['starts_at'] ?? null) ?: null,
+            'ends_at' => ($validated['ends_at'] ?? null) ?: null,
         ]);
 
         return redirect()->route('my.rallies.edit', $rally)
@@ -203,8 +204,8 @@ class RallyManageController extends Controller
             'required_locations_count' => $validated['completion_condition'] === 'count'
                 ? ($validated['required_locations_count'] ?? 1)
                 : null,
-            'starts_at' => $validated['starts_at'] ?: null,
-            'ends_at' => $validated['ends_at'] ?: null,
+            'starts_at' => ($validated['starts_at'] ?? null) ?: null,
+            'ends_at' => ($validated['ends_at'] ?? null) ?: null,
         ]);
 
         return redirect()->route('my.rallies.edit', $rally)
@@ -223,12 +224,21 @@ class RallyManageController extends Controller
             'radius_meters' => ['required', 'integer', 'min:10', 'max:10000'],
             'available_from' => ['nullable', 'date'],
             'available_until' => ['nullable', 'date', 'after_or_equal:available_from'],
-            'stamp_icon_value' => ['required', Rule::in(array_keys(StampLocation::presetIcons()))],
+            'stamp_icon_value' => ['nullable', Rule::in(array_keys(StampLocation::presetIcons()))],
+            'stamp_icon_image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif,svg', 'max:2048'],
             'stamp_color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'sort_order' => ['nullable', 'integer'],
         ]);
 
         $nextOrder = $validated['sort_order'] ?? (($rally->locations()->max('sort_order') ?? 0) + 1);
+
+        if ($request->hasFile('stamp_icon_image')) {
+            $iconType = 'custom';
+            $iconValue = $request->file('stamp_icon_image')->store('stamps', 'public');
+        } else {
+            $iconType = 'preset';
+            $iconValue = $validated['stamp_icon_value'] ?? 'star';
+        }
 
         $rally->locations()->create([
             'name' => $validated['name'],
@@ -236,10 +246,10 @@ class RallyManageController extends Controller
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'radius_meters' => $validated['radius_meters'],
-            'available_from' => $validated['available_from'] ?: null,
-            'available_until' => $validated['available_until'] ?: null,
-            'stamp_icon_type' => 'preset',
-            'stamp_icon_value' => $validated['stamp_icon_value'],
+            'available_from' => ($validated['available_from'] ?? null) ?: null,
+            'available_until' => ($validated['available_until'] ?? null) ?: null,
+            'stamp_icon_type' => $iconType,
+            'stamp_icon_value' => $iconValue,
             'stamp_color' => $validated['stamp_color'],
             'sort_order' => $nextOrder,
         ]);
@@ -253,6 +263,8 @@ class RallyManageController extends Controller
         abort_unless($request->user()->canManageRally($rally), 403, 'このベニューを更新する権限がありません。');
         abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404, '指定されたベニューはこのスタンプラリーに存在しません。');
 
+        $allowedIconValues = array_merge(array_keys(StampLocation::presetIcons()), ['__custom__']);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -261,10 +273,28 @@ class RallyManageController extends Controller
             'radius_meters' => ['required', 'integer', 'min:10', 'max:10000'],
             'available_from' => ['nullable', 'date'],
             'available_until' => ['nullable', 'date', 'after_or_equal:available_from'],
-            'stamp_icon_value' => ['required', Rule::in(array_keys(StampLocation::presetIcons()))],
+            'stamp_icon_value' => ['required', Rule::in($allowedIconValues)],
+            'stamp_icon_image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif,svg', 'max:2048'],
             'stamp_color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'sort_order' => ['nullable', 'integer'],
         ]);
+
+        $iconType = $location->stamp_icon_type;
+        $iconValue = $location->stamp_icon_value;
+
+        if ($request->hasFile('stamp_icon_image')) {
+            if (
+                $location->hasCustomImage()
+                && ! StampLocation::where('id', '!=', $location->id)->where('stamp_icon_value', $location->stamp_icon_value)->exists()
+            ) {
+                Storage::disk('public')->delete($location->stamp_icon_value);
+            }
+            $iconType = 'custom';
+            $iconValue = $request->file('stamp_icon_image')->store('stamps', 'public');
+        } elseif ($validated['stamp_icon_value'] !== '__custom__') {
+            $iconType = 'preset';
+            $iconValue = $validated['stamp_icon_value'];
+        }
 
         $location->update([
             'name' => $validated['name'],
@@ -272,9 +302,10 @@ class RallyManageController extends Controller
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
             'radius_meters' => $validated['radius_meters'],
-            'available_from' => $validated['available_from'] ?: null,
-            'available_until' => $validated['available_until'] ?: null,
-            'stamp_icon_value' => $validated['stamp_icon_value'],
+            'available_from' => ($validated['available_from'] ?? null) ?: null,
+            'available_until' => ($validated['available_until'] ?? null) ?: null,
+            'stamp_icon_type' => $iconType,
+            'stamp_icon_value' => $iconValue,
             'stamp_color' => $validated['stamp_color'],
             'sort_order' => $validated['sort_order'] ?? $location->sort_order,
         ]);

@@ -108,7 +108,11 @@
                             <div class="flex flex-wrap gap-1.5 pt-1">
                                 @foreach ($stamps as $s)
                                     <span class="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-900 px-2.5 py-1 rounded-lg font-medium">
-                                        <span>{{ $s->location->iconEmoji() }}</span>
+                                        @if ($s->location->hasCustomImage())
+                                            <img src="{{ $s->location->iconImageUrl() }}" alt="" class="w-4 h-4 object-contain">
+                                        @else
+                                            <span>{{ $s->location->iconEmoji() }}</span>
+                                        @endif
                                         <span>{{ $s->location->name }}</span>
                                     </span>
                                 @endforeach

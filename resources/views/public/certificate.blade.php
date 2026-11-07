@@ -25,7 +25,11 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left">
             @foreach ($userStamps as $stamp)
                 <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-3 flex items-center gap-2.5">
-                    <span class="text-2xl">{{ $stamp->location->iconEmoji() }}</span>
+                    @if ($stamp->location->hasCustomImage())
+                        <img src="{{ $stamp->location->iconImageUrl() }}" alt="{{ $stamp->location->name }}" class="w-8 h-8 object-contain shrink-0">
+                    @else
+                        <span class="text-2xl">{{ $stamp->location->iconEmoji() }}</span>
+                    @endif
                     <div class="min-w-0">
                         <div class="text-xs font-bold text-slate-800 truncate">{{ $stamp->location->name }}</div>
                         <div class="text-[11px] text-slate-500">{{ $stamp->stamped_at->format('Y/m/d H:i') }}</div>
