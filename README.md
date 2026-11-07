@@ -8,7 +8,9 @@
 
 ### 1. 権限ロール ＆ 3階層構造（Group ＋ シリーズ ＋ ラリー）
 - **権限ロール**:
-  - **管理者 (`is_admin = true`)**: グループ (`Group`)・ラリーシリーズ (`RallySeries`)・スタンプラリー (`StampRally`) の新規作成および全管理が可能。管理画面 (`/my`) または `php artisan user:admin @handle` で他ユーザーを管理者に指定できます。
+  - **管理者 (`is_admin = true`)**: グループ (`Group`)・ラリーシリーズ (`RallySeries`)・スタンプラリー (`StampRally`) の新規作成および全管理が可能。
+    - 初回デプロイ時は環境変数 `APP_INITIAL_ADMINS="github:koyhoge,google:you@example.com"` を設定しておくと、該当アカウントが初回ログイン（新規登録）または再ログインした時点で自動的にシステム管理者に昇格します。
+    - 運用開始後はグループ管理画面 (`/my/groups`) または `php artisan user:admin @handle` で他ユーザーを管理者に指定できます。
   - **グループメンバー (`Group` 所属ユーザー)**: 所属グループのラリーシリーズに属するスタンプラリー (`StampRally`) とベニュー (`StampLocation`) の作成・編集が可能。
   - **一般ユーザー**: スタンプラリーへの参加・チェックイン・達成証の閲覧（マイページ `/dashboard`）が可能（ラリーの新規作成は不可）。
 - **Group（運営グループ）**: 複数の登録済みユーザー（`@handle` またはメールアドレスで追加）が所属し、シリーズやスタンプラリーを共同管理・引き継ぎできます。
@@ -89,6 +91,7 @@ php artisan test
 APP_ENV=production
 APP_DEBUG=false
 APP_DEV_TOOLS=false
+APP_INITIAL_ADMINS="github:koyhoge"
 APP_URL=https://your-domain.example.com
 
 # Neon (Serverless PostgreSQL) 接続例

@@ -377,7 +377,18 @@ class StampRallyFlowTest extends TestCase
         auth()->logout();
         $this->post('/dev-login', ['user_id' => $player->id])->assertStatus(403);
 
-        // 12. GitHub OAuth callback creates and logs in user via Socialite
+        // 12. GitHub OAuth callback creates and logs in user via Socialite, and auto-promotes when matched by APP_INITIAL_ADMINS
+        config(['app.initial_admins' => ['github:octocat_dev']]);
+
+        // Spoofing check: local password registration with handle "octocat_dev" must NOT get admin via "github:octocat_dev"
+        $spoofUser = User::create([
+            'handle' => 'other_handle',
+            'name' => 'Spoof',
+            'email' => 'spoof@example.com',
+            'password' => 'password',
+        ]);
+        $this->assertFalse($spoofUser->syncInitialAdminStatus('local'));
+
         $fakeGithubUser = new \Laravel\Socialite\Two\User();
         $fakeGithubUser->map([
             'id' => '98765432',
@@ -406,6 +417,7 @@ class StampRallyFlowTest extends TestCase
             'handle' => 'octocat_dev',
             'github_id' => '98765432',
             'email' => 'octocat@github.example.com',
+            'is_admin' => 1,
         ]);
     }
 

@@ -5,6 +5,10 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'dev_tools' => (bool) env('APP_DEV_TOOLS', false),
+    'initial_admins' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('APP_INITIAL_ADMINS', env('APP_ADMINS', '')))
+    ))),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => env('APP_TIMEZONE', 'Asia/Tokyo'),
     'locale' => env('APP_LOCALE', 'ja'),

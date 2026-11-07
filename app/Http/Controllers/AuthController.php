@@ -35,6 +35,7 @@ class AuthController extends Controller
 
         if (Auth::attempt([$field => $loginInput, 'password' => $credentials['password']], $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $request->user()?->syncInitialAdminStatus('local');
 
             return redirect()->intended(route('dashboard'))
                 ->with('status', 'ログインしました。');
@@ -60,6 +61,7 @@ class AuthController extends Controller
             'email' => strtolower($validated['email']),
             'password' => Hash::make($validated['password']),
         ]);
+        $user->syncInitialAdminStatus('local');
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -134,6 +136,13 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->syncInitialAdminStatus(
+            'google',
+            null,
+            $googleUser->getEmail(),
+            (string) $googleUser->getId()
+        );
+
         Auth::login($user, true);
         $request->session()->regenerate();
 
@@ -196,6 +205,13 @@ class AuthController extends Controller
                 'avatar_url' => $githubUser->getAvatar(),
             ]);
         }
+
+        $user->syncInitialAdminStatus(
+            'github',
+            $githubUser->getNickname(),
+            $githubUser->getEmail(),
+            $githubId
+        );
 
         Auth::login($user, true);
         $request->session()->regenerate();

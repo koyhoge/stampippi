@@ -42,6 +42,94 @@ class User extends Authenticatable
         return (bool) $this->is_admin;
     }
 
+    /**
+     * 環境変数 APP_INITIAL_ADMINS (例: "github:koyhoge,google:admin@example.com") に一致するか判定し、
+     * 一致する場合は is_admin = true に昇格させる。
+     */
+    public function syncInitialAdminStatus(
+        ?string $oauthProvider = null,
+        ?string $oauthNickname = null,
+        ?string $oauthEmail = null,
+        ?string $oauthId = null
+    ): bool {
+        if ($this->is_admin) {
+            return true;
+        }
+
+        if ($this->matchesInitialAdminRules($oauthProvider, $oauthNickname, $oauthEmail, $oauthId)) {
+            $this->forceFill(['is_admin' => true])->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function matchesInitialAdminRules(
+        ?string $oauthProvider = null,
+        ?string $oauthNickname = null,
+        ?string $oauthEmail = null,
+        ?string $oauthId = null
+    ): bool {
+        $rules = config('app.initial_admins', []);
+        if (! is_array($rules) || $rules === []) {
+            return false;
+        }
+
+        foreach ($rules as $rawRule) {
+            $rule = trim((string) $rawRule);
+            if ($rule === '') {
+                continue;
+            }
+
+            if (str_contains($rule, ':')) {
+                [$prefix, $target] = explode(':', $rule, 2);
+                $prefix = strtolower(trim($prefix));
+                $target = strtolower(trim($target));
+                if ($target === '') {
+                    continue;
+                }
+
+                if ($prefix === 'github' && $oauthProvider === 'github') {
+                    $nick = strtolower(ltrim((string) $oauthNickname, '@'));
+                    $id = strtolower((string) ($oauthId ?: $this->github_id));
+                    if ($nick === $target || $id === $target) {
+                        return true;
+                    }
+                } elseif ($prefix === 'google' && $oauthProvider === 'google') {
+                    $mail = strtolower((string) ($oauthEmail ?: $this->email));
+                    $id = strtolower((string) ($oauthId ?: $this->google_id));
+                    if ($mail === $target || $id === $target) {
+                        return true;
+                    }
+                } elseif ($prefix === 'email') {
+                    if (strtolower((string) $this->email) === $target) {
+                        return true;
+                    }
+                } elseif ($prefix === 'handle') {
+                    if (strtolower((string) $this->handle) === ltrim($target, '@')) {
+                        return true;
+                    }
+                }
+
+                continue;
+            }
+
+            // プレフィックスなし: "@handle" は handle 判定、メールアドレス形式は email 判定
+            if (str_starts_with($rule, '@')) {
+                if (strtolower((string) $this->handle) === strtolower(ltrim($rule, '@'))) {
+                    return true;
+                }
+            } elseif (str_contains($rule, '@')) {
+                if (strtolower((string) $this->email) === strtolower($rule)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function canAccessManagement(): bool
     {
         if ($this->is_admin) {
