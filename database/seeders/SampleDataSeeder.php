@@ -16,31 +16,31 @@ class SampleDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $koyama = User::updateOrCreate(
-            ['handle' => 'koyhoge'],
+        $admin = User::updateOrCreate(
+            ['handle' => 'admin'],
             [
-                'name' => 'KOYAMA Tetsuji',
-                'email' => 'koyama@example.com',
+                'name' => '管理者ユーザー',
+                'email' => 'admin@example.com',
                 'password' => Hash::make('password'),
             ]
         );
-        $koyama->forceFill(['is_admin' => true])->save();
+        $admin->forceFill(['is_admin' => true])->save();
 
         $staff = User::updateOrCreate(
-            ['handle' => 'phpcon_staff'],
+            ['handle' => 'group'],
             [
-                'name' => 'PHPカンファレンス実行委員',
-                'email' => 'staff@example.com',
+                'name' => 'グループメンバー',
+                'email' => 'group@example.com',
                 'password' => Hash::make('password'),
             ]
         );
         $staff->forceFill(['is_admin' => false])->save();
 
         $player = User::updateOrCreate(
-            ['handle' => 'participant'],
+            ['handle' => 'user'],
             [
-                'name' => 'スタンプラリー参加者',
-                'email' => 'player@example.com',
+                'name' => '一般ユーザー',
+                'email' => 'user@example.com',
                 'password' => Hash::make('password'),
             ]
         );
@@ -56,7 +56,7 @@ class SampleDataSeeder extends Seeder
         );
 
         $group->members()->syncWithoutDetaching([
-            $koyama->id => ['role' => 'owner'],
+            $admin->id => ['role' => 'owner'],
             $staff->id => ['role' => 'member'],
         ]);
 
@@ -65,7 +65,7 @@ class SampleDataSeeder extends Seeder
             ['slug' => 'phpcon-stamp-rally'],
             [
                 'group_id' => $group->id,
-                'creator_id' => $koyama->id,
+                'creator_id' => $admin->id,
                 'title' => 'PHPカンファレンススタンプラリー',
                 'description' => '日本全国で開催される各年のPHPカンファレンス会場（ベニュー）を巡る公式スタンプラリーシリーズです。',
                 'visibility' => 'public',
@@ -78,7 +78,7 @@ class SampleDataSeeder extends Seeder
             [
                 'group_id' => $group->id,
                 'rally_series_id' => $series->id,
-                'creator_id' => $koyama->id,
+                'creator_id' => $admin->id,
                 'title' => '日本全国PHPカンファレンススタンプラリー 2026',
                 'description' => '2026年に全国各地で開催されるPHPカンファレンス会場でスタンプを集めよう！3会場以上でコンプリート達成証が発行されます。',
                 'visibility' => 'public',
@@ -182,7 +182,7 @@ class SampleDataSeeder extends Seeder
             [
                 'group_id' => null,
                 'rally_series_id' => null,
-                'creator_id' => $koyama->id,
+                'creator_id' => $admin->id,
                 'title' => '中央線・東京街歩き常設スタンプラリー',
                 'description' => '開催期間の制限がない常設スタンプラリーです。いつでも好きなタイミングでベニューを訪れてスタンプを集められます。',
                 'visibility' => 'public',
