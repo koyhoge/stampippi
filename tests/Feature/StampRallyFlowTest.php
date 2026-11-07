@@ -69,6 +69,7 @@ class StampRallyFlowTest extends TestCase
         $this->actingAs($player)->get('/dashboard')->assertStatus(200);
         $this->actingAs($player)->get('/dashboard?q=PHP')->assertStatus(200);
         $this->actingAs($player)->get('/my')->assertStatus(403);
+        $this->actingAs($player)->get('/my/groups')->assertStatus(403);
         $this->actingAs($player)->get('/my/rallies/create')->assertStatus(403);
         $this->actingAs($player)->post('/my/rallies', [
             'title' => 'Unauthorized Rally',
@@ -121,8 +122,9 @@ class StampRallyFlowTest extends TestCase
 
         $series = RallySeries::where('slug', 'phpcon-series')->firstOrFail();
 
-        // 5. Group member (and Admin) CAN access /my management page and create a StampRally belonging to that Series
+        // 5. Group member (and Admin) CAN access /my and /my/groups management pages and create a StampRally belonging to that Series
         $this->actingAs($coStaff)->get('/my')->assertStatus(200);
+        $this->actingAs($coStaff)->get('/my/groups')->assertStatus(200);
 
         $this->actingAs($coStaff)
             ->post('/my/rallies', [

@@ -4,9 +4,10 @@
 
 @section('content')
 <div class="space-y-8">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-slate-900">👥 {{ $group->name }} ({{ '@' . $group->slug }}) の管理</h1>
+            <a href="{{ route('my.groups.index') }}" class="text-xs font-semibold text-slate-500 hover:text-indigo-600">← グループ管理一覧へ戻る</a>
+            <h1 class="text-2xl font-extrabold text-slate-900 mt-1">👥 {{ $group->name }} ({{ '@' . $group->slug }}) の管理</h1>
             <p class="text-xs text-slate-500 mt-1">基本情報の編集と、登録済みユーザー（@handle / メール）のメンバー追加が行えます。</p>
         </div>
         <a href="{{ route('groups.show', $group) }}" class="text-xs font-semibold text-indigo-600 hover:underline">公開ページを見る →</a>

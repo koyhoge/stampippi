@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/admins', [DashboardController::class, 'grantAdmin'])->name('admins.store');
         Route::delete('/admins/{user}', [DashboardController::class, 'revokeAdmin'])->name('admins.destroy');
 
+        Route::get('/groups', [GroupManageController::class, 'index'])->name('groups.index');
         Route::get('/groups/create', [GroupManageController::class, 'create'])->name('groups.create');
         Route::post('/groups', [GroupManageController::class, 'store'])->name('groups.store');
         Route::get('/groups/{group:slug}/edit', [GroupManageController::class, 'edit'])->name('groups.edit');

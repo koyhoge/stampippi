@@ -26,7 +26,7 @@
             <textarea name="description" rows="3" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">{{ old('description') }}</textarea>
         </div>
         <div class="flex items-center justify-end gap-3 pt-2">
-            <a href="{{ route('my.index') }}" class="text-xs text-slate-500 hover:text-slate-800">キャンセル</a>
+            <a href="{{ route('my.groups.index') }}" class="text-xs text-slate-500 hover:text-slate-800">キャンセル</a>
             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl">
                 作成する
             </button>

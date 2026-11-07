@@ -147,10 +147,6 @@ class DashboardController extends Controller
         abort_unless($user->canAccessManagement(), 403, '運営・管理画面へのアクセス権限がありません。');
 
         if ($user->isAdmin()) {
-            $manageableGroups = Group::withCount(['members', 'series', 'rallies'])
-                ->orderBy('name')
-                ->get();
-
             $manageableSeries = RallySeries::with(['group', 'rallies'])
                 ->latest()
                 ->get();
@@ -158,17 +154,8 @@ class DashboardController extends Controller
             $manageableRallies = StampRally::with(['group', 'series', 'locations'])
                 ->latest()
                 ->get();
-
-            $adminUsers = User::where('is_admin', true)
-                ->orderBy('id')
-                ->get();
         } else {
-            $manageableGroups = $user->groups()
-                ->withCount(['members', 'series', 'rallies'])
-                ->orderBy('name')
-                ->get();
-
-            $groupIds = $manageableGroups->pluck('id');
+            $groupIds = $user->groups->pluck('id');
 
             $manageableSeries = RallySeries::with(['group', 'rallies'])
                 ->whereIn('group_id', $groupIds)
@@ -185,16 +172,12 @@ class DashboardController extends Controller
                 })
                 ->latest()
                 ->get();
-
-            $adminUsers = collect();
         }
 
         return view('manage.index', compact(
             'user',
-            'manageableGroups',
             'manageableSeries',
-            'manageableRallies',
-            'adminUsers'
+            'manageableRallies'
         ));
     }
 

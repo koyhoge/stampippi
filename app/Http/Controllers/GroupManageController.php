@@ -11,6 +11,35 @@ use Illuminate\View\View;
 
 class GroupManageController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+        abort_unless($user->canAccessManagement(), 403, 'グループ管理画面へのアクセス権限がありません。');
+
+        if ($user->isAdmin()) {
+            $manageableGroups = Group::withCount(['members', 'series', 'rallies'])
+                ->orderBy('name')
+                ->get();
+
+            $adminUsers = User::where('is_admin', true)
+                ->orderBy('id')
+                ->get();
+        } else {
+            $manageableGroups = $user->groups()
+                ->withCount(['members', 'series', 'rallies'])
+                ->orderBy('name')
+                ->get();
+
+            $adminUsers = collect();
+        }
+
+        return view('manage.groups.index', compact(
+            'user',
+            'manageableGroups',
+            'adminUsers'
+        ));
+    }
+
     public function create(Request $request): View
     {
         abort_unless($request->user()->canCreateGroup(), 403, 'グループの新規作成は管理者のみ行えます。');

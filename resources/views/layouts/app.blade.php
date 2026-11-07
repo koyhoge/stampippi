@@ -24,8 +24,11 @@
                             📖 マイページ
                         </a>
                         @if (auth()->user()->canAccessManagement())
-                            <a href="{{ route('my.index') }}" class="{{ request()->routeIs('my.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
+                            <a href="{{ route('my.index') }}" class="{{ request()->routeIs('my.index', 'my.rallies.*', 'my.series.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
                                 ⚙️ ラリー管理
+                            </a>
+                            <a href="{{ route('my.groups.index') }}" class="{{ request()->routeIs('my.groups.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
+                                👥 グループ管理
                             </a>
                         @endif
                     @endauth
