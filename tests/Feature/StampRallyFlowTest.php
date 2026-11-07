@@ -65,18 +65,70 @@ class StampRallyFlowTest extends TestCase
             'password' => 'password',
         ]);
 
-        // General user can view participant dashboard (/dashboard) and search active rallies, but cannot access management (/my) or create rallies
+        // General user can view participant dashboard (/dashboard) and search active rallies
         $this->actingAs($player)->get('/dashboard')->assertStatus(200);
         $this->actingAs($player)->get('/dashboard?q=PHP')->assertStatus(200);
-        $this->actingAs($player)->get('/my')->assertStatus(403);
+
+        // General user CAN access /my and create a standalone rally, but CANNOT access group management or series creation
+        $this->actingAs($player)->get('/my')->assertStatus(200);
         $this->actingAs($player)->get('/my/groups')->assertStatus(403);
-        $this->actingAs($player)->get('/my/rallies/create')->assertStatus(403);
+        $this->actingAs($player)->get('/my/series/create')->assertStatus(403);
+        $this->actingAs($player)->get('/my/rallies/create')->assertStatus(200);
+
+        // General user can create a standalone rally (without group or series)
         $this->actingAs($player)->post('/my/rallies', [
-            'title' => 'Unauthorized Rally',
-            'slug' => 'unauthorized-rally',
+            'title' => 'Player Solo Rally',
+            'slug' => 'player-solo-rally',
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect(route('my.rallies.edit', 'player-solo-rally'));
+
+        $playerRally = StampRally::where('slug', 'player-solo-rally')->firstOrFail();
+        $this->assertEquals($player->id, $playerRally->creator_id);
+        $this->assertNull($playerRally->group_id);
+        $this->assertNull($playerRally->rally_series_id);
+
+        // General user can add locations to their rally
+        $this->actingAs($player)->post("/my/rallies/{$playerRally->slug}/locations", [
+            'name' => 'Solo Venue 1',
+            'latitude' => 35.6812,
+            'longitude' => 139.7671,
+            'radius_meters' => 50,
+            'stamp_icon_value' => 'coffee',
+            'stamp_color' => '#f97316',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('stamp_locations', [
+            'stamp_rally_id' => $playerRally->id,
+            'name' => 'Solo Venue 1',
+        ]);
+
+        // Another general user cannot edit or modify player's solo rally
+        $otherPlayer = User::create([
+            'handle' => 'other_player',
+            'name' => 'Other Player',
+            'email' => 'other_player@example.com',
+            'password' => 'password',
+        ]);
+        $this->actingAs($otherPlayer)->get(route('my.rallies.edit', $playerRally))->assertStatus(403);
+        $this->actingAs($otherPlayer)->put(route('my.rallies.update', $playerRally), [
+            'title' => 'Hijacked Rally',
+            'slug' => 'hijacked-rally',
             'visibility' => 'public',
             'completion_condition' => 'all',
         ])->assertStatus(403);
+
+        // General user cannot assign their rally to a group they do not belong to
+        $this->actingAs($player)
+            ->from('/my/rallies/create')
+            ->post('/my/rallies', [
+                'title' => 'Invalid Group Rally',
+                'slug' => 'invalid-group-rally',
+                'visibility' => 'public',
+                'completion_condition' => 'all',
+                'group_id' => 99999,
+            ])
+            ->assertRedirect('/my/rallies/create')
+            ->assertSessionHasErrors(['group_id']);
 
         // 1. Admin creates a Group
         $this->actingAs($admin)
@@ -126,21 +178,32 @@ class StampRallyFlowTest extends TestCase
         $this->actingAs($coStaff)->get('/my')->assertStatus(200);
         $this->actingAs($coStaff)->get('/my/groups')->assertStatus(200);
 
-        // Non-admin group member attempting to create a standalone rally without a series gets a Japanese validation error
+        // Non-admin group member attempting to create a rally with a non-existent series gets a validation error
         $this->actingAs($coStaff)
             ->from('/my/rallies/create')
             ->post('/my/rallies', [
                 'group_id' => $group->id,
-                'rally_series_id' => null,
-                'title' => 'Standalone Rally',
-                'slug' => 'standalone-rally',
+                'rally_series_id' => 99999,
+                'title' => 'Invalid Series Rally',
+                'slug' => 'invalid-series-rally',
                 'visibility' => 'public',
                 'completion_condition' => 'all',
             ])
             ->assertRedirect('/my/rallies/create')
             ->assertSessionHasErrors([
-                'rally_series_id' => '所属するラリーシリーズを選択してください（グループメンバーはシリーズに属するスタンプラリーのみ作成できます）。',
+                'rally_series_id' => '選択されたラリーシリーズが見つかりません。',
             ]);
+
+        // General user (player) attempting to attach a rally to a series they do not belong to is aborted with 403
+        $this->actingAs($player)
+            ->post('/my/rallies', [
+                'rally_series_id' => $series->id,
+                'title' => 'Sneaky Series Rally',
+                'slug' => 'sneaky-series-rally',
+                'visibility' => 'public',
+                'completion_condition' => 'all',
+            ])
+            ->assertStatus(403);
 
         $this->actingAs($coStaff)
             ->post('/my/rallies', [

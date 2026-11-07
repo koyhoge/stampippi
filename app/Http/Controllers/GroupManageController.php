@@ -14,7 +14,7 @@ class GroupManageController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->canAccessManagement(), 403, 'グループ管理画面へのアクセス権限がありません。');
+        abort_unless($user->canManageAnyGroup(), 403, 'グループ管理画面へのアクセス権限がありません。');
 
         if ($user->isAdmin()) {
             $manageableGroups = Group::withCount(['members', 'series', 'rallies'])
