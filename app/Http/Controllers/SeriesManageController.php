@@ -60,7 +60,7 @@ class SeriesManageController extends Controller
     public function edit(Request $request, RallySeries $series): View
     {
         $user = $request->user();
-        abort_unless($user->canManageSeries($series), 403);
+        abort_unless($user->canManageSeries($series), 403, 'このラリーシリーズを編集する権限がありません。');
 
         $groups = $user->isAdmin()
             ? Group::orderBy('name')->get()
@@ -78,7 +78,7 @@ class SeriesManageController extends Controller
     public function update(Request $request, RallySeries $series): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canManageSeries($series), 403);
+        abort_unless($user->canManageSeries($series), 403, 'このラリーシリーズを更新する権限がありません。');
 
         $groupIds = $user->isAdmin()
             ? Group::pluck('id')->all()

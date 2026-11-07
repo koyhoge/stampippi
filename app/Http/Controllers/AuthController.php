@@ -70,7 +70,7 @@ class AuthController extends Controller
 
     public function devLogin(Request $request): RedirectResponse
     {
-        abort_unless((bool) config('app.dev_tools'), 403);
+        abort_unless((bool) config('app.dev_tools'), 403, '現在、開発用ログイン機能は無効化されています。');
 
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],

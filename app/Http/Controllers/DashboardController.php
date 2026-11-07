@@ -183,7 +183,7 @@ class DashboardController extends Controller
 
     public function grantAdmin(Request $request): RedirectResponse
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->isAdmin(), 403, '管理者ユーザーの追加・変更はシステム管理者のみ行えます。');
 
         $validated = $request->validate([
             'identifier' => ['required', 'string', 'max:255'],
@@ -197,7 +197,7 @@ class DashboardController extends Controller
 
         if (! $targetUser) {
             return back()->withErrors([
-                'identifier' => "「{$validated['identifier']}」に一致する登録済みユーザーが見つかりません。",
+                'identifier' => "「{$validated['identifier']}」に一致する登録済みユーザーが見つかりません。先にサービスへログインまたはアカウント登録してもらってください。",
             ])->withInput();
         }
 
@@ -208,7 +208,7 @@ class DashboardController extends Controller
 
     public function revokeAdmin(Request $request, User $user): RedirectResponse
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->isAdmin(), 403, '管理者権限の解除はシステム管理者のみ行えます。');
 
         if (User::where('is_admin', true)->count() <= 1 && $user->isAdmin()) {
             return back()->withErrors([

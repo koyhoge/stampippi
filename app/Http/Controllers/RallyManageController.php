@@ -16,7 +16,7 @@ class RallyManageController extends Controller
     public function create(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成は、システム管理者またはシリーズを持つグループのメンバーのみ行えます。');
 
         if ($user->isAdmin()) {
             $groups = Group::orderBy('name')->get();
@@ -56,7 +56,7 @@ class RallyManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成は、システム管理者またはシリーズを持つグループのメンバーのみ行えます。');
 
         $groupIds = $user->isAdmin()
             ? Group::pluck('id')->all()
@@ -82,7 +82,7 @@ class RallyManageController extends Controller
         $series = null;
         if (! empty($validated['rally_series_id'])) {
             $series = RallySeries::findOrFail($validated['rally_series_id']);
-            abort_unless($user->canManageSeries($series), 403);
+            abort_unless($user->canManageSeries($series), 403, '選択されたラリーシリーズにスタンプラリーを追加する権限がありません。');
         }
 
         $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
@@ -110,7 +110,7 @@ class RallyManageController extends Controller
     public function edit(Request $request, StampRally $rally): View
     {
         $user = $request->user();
-        abort_unless($user->canManageRally($rally), 403);
+        abort_unless($user->canManageRally($rally), 403, 'このスタンプラリーを編集する権限がありません。');
 
         $rally->load(['locations', 'series', 'group']);
 
@@ -155,7 +155,7 @@ class RallyManageController extends Controller
     public function update(Request $request, StampRally $rally): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canManageRally($rally), 403);
+        abort_unless($user->canManageRally($rally), 403, 'このスタンプラリーを更新する権限がありません。');
 
         $groupIds = $user->isAdmin()
             ? Group::pluck('id')->all()
@@ -187,7 +187,7 @@ class RallyManageController extends Controller
         $series = null;
         if (! empty($validated['rally_series_id'])) {
             $series = RallySeries::findOrFail($validated['rally_series_id']);
-            abort_unless($user->canManageSeries($series), 403);
+            abort_unless($user->canManageSeries($series), 403, '選択されたラリーシリーズにスタンプラリーを追加する権限がありません。');
         }
 
         $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
@@ -213,7 +213,7 @@ class RallyManageController extends Controller
 
     public function storeLocation(Request $request, StampRally $rally): RedirectResponse
     {
-        abort_unless($request->user()->canManageRally($rally), 403);
+        abort_unless($request->user()->canManageRally($rally), 403, 'このスタンプラリーにベニューを追加する権限がありません。');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -250,8 +250,8 @@ class RallyManageController extends Controller
 
     public function updateLocation(Request $request, StampRally $rally, StampLocation $location): RedirectResponse
     {
-        abort_unless($request->user()->canManageRally($rally), 403);
-        abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404);
+        abort_unless($request->user()->canManageRally($rally), 403, 'このベニューを更新する権限がありません。');
+        abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404, '指定されたベニューはこのスタンプラリーに存在しません。');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -285,8 +285,8 @@ class RallyManageController extends Controller
 
     public function destroyLocation(Request $request, StampRally $rally, StampLocation $location): RedirectResponse
     {
-        abort_unless($request->user()->canManageRally($rally), 403);
-        abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404);
+        abort_unless($request->user()->canManageRally($rally), 403, 'このベニューを削除する権限がありません。');
+        abort_unless((int) $location->stamp_rally_id === (int) $rally->id, 404, '指定されたベニューはこのスタンプラリーに存在しません。');
 
         $name = $location->name;
         $location->delete();
@@ -298,14 +298,14 @@ class RallyManageController extends Controller
     public function copyLocation(Request $request, StampRally $rally): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canManageRally($rally), 403);
+        abort_unless($user->canManageRally($rally), 403, 'このスタンプラリーにベニューを追加する権限がありません。');
 
         $validated = $request->validate([
             'source_location_id' => ['required', 'exists:stamp_locations,id'],
         ]);
 
         $source = StampLocation::with('rally')->findOrFail($validated['source_location_id']);
-        abort_unless($user->canManageRally($source->rally), 403);
+        abort_unless($user->canManageRally($source->rally), 403, 'コピー元のベニューを参照する権限がありません。');
 
         $nextOrder = ($rally->locations()->max('sort_order') ?? 0) + 1;
 

@@ -71,7 +71,7 @@ class GroupManageController extends Controller
 
     public function edit(Request $request, Group $group): View
     {
-        abort_unless($request->user()->canManageGroup($group), 403);
+        abort_unless($request->user()->canManageGroup($group), 403, 'このグループを管理する権限がありません。');
 
         $group->load(['members', 'series', 'rallies']);
 
@@ -80,7 +80,7 @@ class GroupManageController extends Controller
 
     public function update(Request $request, Group $group): RedirectResponse
     {
-        abort_unless($request->user()->canManageGroup($group), 403);
+        abort_unless($request->user()->canManageGroup($group), 403, 'このグループを更新する権限がありません。');
 
         $validated = $request->validate([
             'slug' => [
@@ -138,7 +138,7 @@ class GroupManageController extends Controller
 
     public function removeMember(Request $request, Group $group, User $user): RedirectResponse
     {
-        abort_unless($request->user()->isOwnerOfGroup($group), 403);
+        abort_unless($request->user()->isOwnerOfGroup($group), 403, 'メンバーの削除はグループオーナーまたはシステム管理者のみ行えます。');
 
         $ownerCount = $group->members()->wherePivot('role', 'owner')->count();
         $isTargetOwner = $group->members()

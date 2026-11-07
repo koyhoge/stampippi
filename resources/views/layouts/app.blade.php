@@ -65,8 +65,12 @@
         @endif
 
         @if ($errors->any())
-            <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-800 text-sm">
-                <ul class="list-disc list-inside space-y-1">
+            <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3.5 text-rose-800 text-sm space-y-1.5">
+                <div class="font-bold flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>入力内容または操作を確認してください</span>
+                </div>
+                <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
