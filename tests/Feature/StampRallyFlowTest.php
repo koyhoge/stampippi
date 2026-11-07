@@ -378,16 +378,31 @@ class StampRallyFlowTest extends TestCase
         $this->post('/dev-login', ['user_id' => $player->id])->assertStatus(403);
 
         // 12. GitHub OAuth callback creates and logs in user via Socialite, and auto-promotes when matched by APP_INITIAL_ADMINS
-        config(['app.initial_admins' => ['github:octocat_dev']]);
+        config(['app.initial_admins' => ['github:octocat_dev', 'google:boss@example.com']]);
 
-        // Spoofing check: local password registration with handle "octocat_dev" must NOT get admin via "github:octocat_dev"
-        $spoofUser = User::create([
-            'handle' => 'other_handle',
+        // 12a. Password registration with a matching handle never grants admin
+        $this->post('/register', [
+            'handle' => 'octocat_dev_fake',
             'name' => 'Spoof',
             'email' => 'spoof@example.com',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ])->assertRedirect();
+        $this->assertFalse(User::where('handle', 'octocat_dev_fake')->first()->isAdmin());
+        auth()->logout();
+
+        // 12b. Pre-registered password account with the admin's email is NOT promoted when OAuth links to it
+        $preRegistered = User::create([
+            'handle' => 'squatter',
+            'name' => 'Squatter',
+            'email' => 'boss@example.com',
             'password' => 'password',
         ]);
-        $this->assertFalse($spoofUser->syncInitialAdminStatus('local'));
+        $this->assertFalse($preRegistered->syncInitialAdminStatus('google', null, 'boss@example.com', 'g-1'));
+        $this->assertFalse($preRegistered->fresh()->isAdmin());
+
+        // 12c. Other providers / non-matching names never match
+        $this->assertFalse($preRegistered->matchesInitialAdminRules('google', 'octocat_dev', 'x@example.com', 'g-2'));
 
         $fakeGithubUser = new \Laravel\Socialite\Two\User();
         $fakeGithubUser->map([

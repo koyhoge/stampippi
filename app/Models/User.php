@@ -45,6 +45,12 @@ class User extends Authenticatable
     /**
      * 環境変数 APP_INITIAL_ADMINS (例: "github:koyhoge,google:admin@example.com") に一致するか判定し、
      * 一致する場合は is_admin = true に昇格させる。
+     *
+     * セキュリティ方針:
+     * - 判定には OAuth プロバイダが検証した値（GitHub の nickname/ID、Google のメール/ID）のみを使用し、
+     *   ユーザーが自由に入力できる handle や未検証のメールアドレスでは昇格させない。
+     * - パスワードが設定されたアカウントは昇格させない（メールアドレスで先回り登録されたアカウントに
+     *   OAuth が自動紐付けされた場合の乗っ取りを防ぐため）。必要なら `php artisan user:admin` を使う。
      */
     public function syncInitialAdminStatus(
         ?string $oauthProvider = null,
@@ -56,13 +62,26 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->matchesInitialAdminRules($oauthProvider, $oauthNickname, $oauthEmail, $oauthId)) {
-            $this->forceFill(['is_admin' => true])->save();
-
-            return true;
+        if (! in_array($oauthProvider, ['github', 'google'], true)) {
+            return false;
         }
 
-        return false;
+        if (! $this->matchesInitialAdminRules($oauthProvider, $oauthNickname, $oauthEmail, $oauthId)) {
+            return false;
+        }
+
+        if (! empty($this->getAttributes()['password'] ?? null)) {
+            \Illuminate\Support\Facades\Log::warning('APP_INITIAL_ADMINS に一致しましたが、パスワード設定済みアカウントのため自動昇格をスキップしました。', [
+                'user_id' => $this->id,
+                'provider' => $oauthProvider,
+            ]);
+
+            return false;
+        }
+
+        $this->forceFill(['is_admin' => true])->save();
+
+        return true;
     }
 
     public function matchesInitialAdminRules(
@@ -76,54 +95,29 @@ class User extends Authenticatable
             return false;
         }
 
+        $nick = strtolower(ltrim((string) $oauthNickname, '@'));
+        $mail = strtolower((string) $oauthEmail);
+        $id = strtolower((string) $oauthId);
+
         foreach ($rules as $rawRule) {
             $rule = trim((string) $rawRule);
-            if ($rule === '') {
+            if (! str_contains($rule, ':')) {
                 continue;
             }
 
-            if (str_contains($rule, ':')) {
-                [$prefix, $target] = explode(':', $rule, 2);
-                $prefix = strtolower(trim($prefix));
-                $target = strtolower(trim($target));
-                if ($target === '') {
-                    continue;
-                }
-
-                if ($prefix === 'github' && $oauthProvider === 'github') {
-                    $nick = strtolower(ltrim((string) $oauthNickname, '@'));
-                    $id = strtolower((string) ($oauthId ?: $this->github_id));
-                    if ($nick === $target || $id === $target) {
-                        return true;
-                    }
-                } elseif ($prefix === 'google' && $oauthProvider === 'google') {
-                    $mail = strtolower((string) ($oauthEmail ?: $this->email));
-                    $id = strtolower((string) ($oauthId ?: $this->google_id));
-                    if ($mail === $target || $id === $target) {
-                        return true;
-                    }
-                } elseif ($prefix === 'email') {
-                    if (strtolower((string) $this->email) === $target) {
-                        return true;
-                    }
-                } elseif ($prefix === 'handle') {
-                    if (strtolower((string) $this->handle) === ltrim($target, '@')) {
-                        return true;
-                    }
-                }
-
+            [$prefix, $target] = explode(':', $rule, 2);
+            $prefix = strtolower(trim($prefix));
+            $target = strtolower(ltrim(trim($target), '@'));
+            if ($target === '' || $prefix !== $oauthProvider) {
                 continue;
             }
 
-            // プレフィックスなし: "@handle" は handle 判定、メールアドレス形式は email 判定
-            if (str_starts_with($rule, '@')) {
-                if (strtolower((string) $this->handle) === strtolower(ltrim($rule, '@'))) {
-                    return true;
-                }
-            } elseif (str_contains($rule, '@')) {
-                if (strtolower((string) $this->email) === strtolower($rule)) {
-                    return true;
-                }
+            if ($prefix === 'github' && (($nick !== '' && $nick === $target) || ($id !== '' && $id === $target))) {
+                return true;
+            }
+
+            if ($prefix === 'google' && (($mail !== '' && $mail === $target) || ($id !== '' && $id === $target))) {
+                return true;
             }
         }
 
