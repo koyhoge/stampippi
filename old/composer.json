@@ -1,0 +1,26 @@
+{
+    "name": "koyhoge/stampippi",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Koyhoge\\Stampippi\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "KOYAMA Tetsuji"
+        }
+    ],
+    "require": {
+        "mjaschen/phpgeo": "^5.0",
+        "twig/twig": "^3.8",
+        "google/cloud": "^0.229.0",
+        "google/cloud-core": "^1.47",
+        "google/cloud-firestore": "^1.39.0",
+        "grpc/grpc": "^1.38",
+        "league/oauth2-client": "^2.7",
+        "league/oauth2-google": "^4.0"
+    }
+}
+
