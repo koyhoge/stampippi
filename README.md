@@ -22,7 +22,7 @@
 
 ### 3. GPS距離判定 ＆ ローカル開発用シミュレーター
 - サーバー側で `mjaschen/phpgeo`（Haversine 公式）を用いて現在地とベニューの距離を正確に計算し、指定された判定半径以内であればスタンプを獲得できます。
-- `APP_ENV=local` 環境では、スタンプラリー画面に **「ローカル開発用 GPSシミュレーター」** が表示され、PC上からワンクリックで各ベニュー座標（または地図上の任意の地点）へ擬似移動してチェックインのテストを行えます。
+- `APP_DEV_TOOLS=true`（`config/app.php` の `'dev_tools'`）を有効にすると、スタンプラリー画面に **「開発用 GPSシミュレーター」** およびログイン画面に **「開発用 ワンクリックログイン」** が表示されます。不要な場合や本番環境では `APP_DEV_TOOLS=false`（デフォルト `false`）で完全にオフになります。
 
 ---
 
@@ -87,6 +87,7 @@ php artisan test
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
+APP_DEV_TOOLS=false
 APP_URL=https://your-domain.example.com
 
 # Neon (Serverless PostgreSQL) 接続例

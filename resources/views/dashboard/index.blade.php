@@ -15,6 +15,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('dashboard.map') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition">
+                🗺️ 獲得スタンプ全地点マップ ({{ $totalStampsCount }}個)
+            </a>
             <a href="{{ route('profile.edit') }}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl transition">
                 👤 プロフィール設定
             </a>

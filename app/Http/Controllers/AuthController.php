@@ -16,7 +16,7 @@ class AuthController extends Controller
 {
     public function showLogin(): View
     {
-        $devUsers = app()->environment('local', 'testing')
+        $devUsers = config('app.dev_tools')
             ? User::orderBy('id')->get()
             : collect();
 
@@ -70,7 +70,7 @@ class AuthController extends Controller
 
     public function devLogin(Request $request): RedirectResponse
     {
-        abort_unless(app()->environment('local', 'testing'), 403);
+        abort_unless((bool) config('app.dev_tools'), 403);
 
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],

@@ -219,7 +219,7 @@
                     <div class="text-slate-500" id="gps-coords-display">スタンプ押印時にスマートフォンの位置情報を取得します。</div>
                 </div>
 
-                @if (app()->environment('local', 'testing'))
+                @if (config('app.dev_tools'))
                     <details class="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs group">
                         <summary class="font-extrabold text-amber-900 cursor-pointer flex items-center justify-between list-none">
                             <span>🛠️ 開発用 GPSシミュレーター (タップで開閉)</span>
@@ -378,7 +378,7 @@
         }
     }
 
-    @if (app()->environment('local', 'testing'))
+    @if (config('app.dev_tools'))
     map.on('click', function(e) {
         const lat = Number(e.latlng.lat.toFixed(7));
         const lng = Number(e.latlng.lng.toFixed(7));

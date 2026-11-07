@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
     // Participant My Page (参加型)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/map', [DashboardController::class, 'stampMap'])->name('dashboard.map');
 
     // Creator, Group & Admin management (管理系)
     Route::prefix('my')->name('my.')->group(function () {

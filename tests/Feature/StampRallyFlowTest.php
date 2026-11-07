@@ -183,12 +183,19 @@ class StampRallyFlowTest extends TestCase
                 'is_rally_completed' => true,
             ]);
 
-        // 9. Player can view the completion certificate
+        // 9. Player can view the completion certificate and the all-stamps footprint map (/dashboard/map)
         $this->actingAs($player)
             ->get("/rallies/{$rally->slug}/certificate")
             ->assertStatus(200)
             ->assertSee('コンプリート達成証')
             ->assertSee('大田区産業プラザPiO');
+
+        $this->actingAs($player)
+            ->get('/dashboard/map')
+            ->assertStatus(200)
+            ->assertSee('獲得スタンプ全地点マップ')
+            ->assertSee('大田区産業プラザPiO')
+            ->assertSee('日本全国PHPカンファレンススタンプラリー 2026');
 
         // 9b. Player can archive the permanent rally from "参加中のスタンプラリー" and still view it via ?archived=1
         $this->actingAs($player)
@@ -213,6 +220,16 @@ class StampRallyFlowTest extends TestCase
         $this->actingAs($player->fresh())
             ->get('/my/series/create')
             ->assertStatus(200);
+
+        // 11. Disabling config('app.dev_tools') turns off dev login and GPS simulator
+        config(['app.dev_tools' => false]);
+        $this->actingAs($player)
+            ->get("/rallies/{$rally->slug}")
+            ->assertStatus(200)
+            ->assertDontSee('開発用 GPSシミュレーター');
+
+        auth()->logout();
+        $this->post('/dev-login', ['user_id' => $player->id])->assertStatus(403);
     }
 
     public function test_location_period_window_is_enforced_when_specified(): void

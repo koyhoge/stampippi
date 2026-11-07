@@ -4,6 +4,7 @@ return [
     'name' => env('APP_NAME', 'Stampippi'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
+    'dev_tools' => (bool) env('APP_DEV_TOOLS', false),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => env('APP_TIMEZONE', 'Asia/Tokyo'),
     'locale' => env('APP_LOCALE', 'ja'),

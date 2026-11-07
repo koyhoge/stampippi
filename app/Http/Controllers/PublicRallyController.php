@@ -22,7 +22,7 @@ class PublicRallyController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $devUsers = app()->environment('local', 'testing')
+        $devUsers = config('app.dev_tools')
             ? User::orderBy('id')->get()
             : collect();
 

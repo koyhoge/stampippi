@@ -33,11 +33,13 @@ class DashboardController extends Controller
             ? $allParticipations
             : $allParticipations->reject(fn (RallyParticipation $p) => $p->isArchived())->values();
 
-        $stampsByRally = $user->stamps()
+        $userStamps = $user->stamps()
             ->with('location')
             ->orderByDesc('stamped_at')
-            ->get()
-            ->groupBy('stamp_rally_id');
+            ->get();
+
+        $totalStampsCount = $userStamps->count();
+        $stampsByRally = $userStamps->groupBy('stamp_rally_id');
 
         $publicQuery = StampRally::with(['group', 'series'])
             ->withCount('locations')
@@ -76,10 +78,49 @@ class DashboardController extends Controller
             'activeParticipationsCount',
             'archivedCount',
             'showArchived',
+            'totalStampsCount',
             'stampsByRally',
             'publicRallies',
             'totalPublicActiveCount',
             'keyword'
+        ));
+    }
+
+    public function stampMap(Request $request): View
+    {
+        $user = $request->user();
+
+        $stamps = $user->stamps()
+            ->with(['location', 'rally.series'])
+            ->orderByDesc('stamped_at')
+            ->get()
+            ->filter(fn ($stamp) => $stamp->location && $stamp->rally)
+            ->values();
+
+        $mapStamps = $stamps->map(function ($stamp) {
+            return [
+                'id' => $stamp->id,
+                'location_id' => $stamp->location->id,
+                'location_name' => $stamp->location->name,
+                'latitude' => (float) $stamp->location->latitude,
+                'longitude' => (float) $stamp->location->longitude,
+                'icon_emoji' => $stamp->location->iconEmoji(),
+                'stamp_color' => $stamp->location->stamp_color,
+                'stamped_at' => $stamp->stamped_at->format('Y/m/d H:i'),
+                'distance_meters' => (int) $stamp->distance_meters,
+                'rally_title' => $stamp->rally->title,
+                'rally_url' => route('rallies.show', $stamp->rally),
+                'series_title' => $stamp->rally->series?->title,
+            ];
+        })->values();
+
+        $rallyCount = $stamps->pluck('stamp_rally_id')->unique()->count();
+
+        return view('dashboard.map', compact(
+            'user',
+            'stamps',
+            'mapStamps',
+            'rallyCount'
         ));
     }
 
