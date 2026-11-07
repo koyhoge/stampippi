@@ -17,7 +17,7 @@ class RallyManageController extends Controller
     public function create(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成は、システム管理者またはシリーズを持つグループのメンバーのみ行えます。');
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
 
         if ($user->isAdmin()) {
             $groups = Group::orderBy('name')->get();
@@ -31,7 +31,7 @@ class RallyManageController extends Controller
                 ->get();
         }
 
-        $defaultSeriesId = $request->query('series_id') ?: (! $user->isAdmin() ? $seriesList->first()?->id : null);
+        $defaultSeriesId = $request->query('series_id') ?: null;
         $defaultGroupId = $request->query('group_id');
         if (! $defaultGroupId && $defaultSeriesId) {
             $defaultGroupId = $seriesList->firstWhere('id', (int) $defaultSeriesId)?->group_id;
@@ -57,15 +57,13 @@ class RallyManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成は、システム管理者またはシリーズを持つグループのメンバーのみ行えます。');
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
 
         $groupIds = $user->isAdmin()
             ? Group::pluck('id')->all()
             : $user->groups()->pluck('groups.id')->all();
 
-        $seriesRule = $user->isAdmin()
-            ? ['nullable', 'exists:rally_series,id']
-            : ['required', 'exists:rally_series,id'];
+        $seriesRule = ['nullable', 'exists:rally_series,id'];
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -93,7 +91,7 @@ class RallyManageController extends Controller
         $rally = StampRally::create([
             'creator_id' => $user->id,
             'group_id' => $resolvedGroupId,
-            'rally_series_id' => $validated['rally_series_id'] ?: null,
+            'rally_series_id' => ($validated['rally_series_id'] ?? null) ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
@@ -164,9 +162,7 @@ class RallyManageController extends Controller
             ? Group::pluck('id')->all()
             : $user->groups()->pluck('groups.id')->all();
 
-        $seriesRule = $user->isAdmin()
-            ? ['nullable', 'exists:rally_series,id']
-            : ['required', 'exists:rally_series,id'];
+        $seriesRule = ['nullable', 'exists:rally_series,id'];
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -199,7 +195,7 @@ class RallyManageController extends Controller
 
         $rally->update([
             'group_id' => $resolvedGroupId,
-            'rally_series_id' => $validated['rally_series_id'] ?: null,
+            'rally_series_id' => ($validated['rally_series_id'] ?? null) ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,

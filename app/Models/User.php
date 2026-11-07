@@ -143,11 +143,12 @@ class User extends Authenticatable
 
     public function canAccessManagement(): bool
     {
-        if ($this->is_admin) {
-            return true;
-        }
+        return true;
+    }
 
-        return $this->groups()->exists();
+    public function canManageAnyGroup(): bool
+    {
+        return $this->is_admin || $this->groups()->exists();
     }
 
     public function canCreateGroup(): bool
@@ -162,14 +163,7 @@ class User extends Authenticatable
 
     public function canCreateRally(): bool
     {
-        if ($this->is_admin) {
-            return true;
-        }
-
-        $groupIds = $this->groups()->pluck('groups.id');
-
-        return $groupIds->isNotEmpty()
-            && RallySeries::whereIn('group_id', $groupIds)->exists();
+        return true;
     }
 
     public function groups(): BelongsToMany

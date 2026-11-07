@@ -27,9 +27,11 @@
                             <a href="{{ route('my.index') }}" class="{{ request()->routeIs('my.index', 'my.rallies.*', 'my.series.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
                                 ⚙️ ラリー管理
                             </a>
-                            <a href="{{ route('my.groups.index') }}" class="{{ request()->routeIs('my.groups.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
-                                👥 グループ管理
-                            </a>
+                            @if (auth()->user()->canManageAnyGroup())
+                                <a href="{{ route('my.groups.index') }}" class="{{ request()->routeIs('my.groups.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
+                                    👥 グループ管理
+                                </a>
+                            @endif
                         @endif
                     @endauth
                 </nav>

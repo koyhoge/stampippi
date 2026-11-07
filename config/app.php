@@ -2,9 +2,9 @@
 
 return [
     'name' => env('APP_NAME', 'Stampippi'),
-    'env' => env('APP_ENV', 'production'),
+    'env' => env('APP_ENV', 'develop'),
     'debug' => (bool) env('APP_DEBUG', false),
-    'dev_tools' => (bool) env('APP_DEV_TOOLS', env('APP_DEV_TOOL', false)),
+    'dev_tools' => (bool) env('APP_DEV_TOOLS', env('APP_ENV', 'develop') !== 'production'),
     'initial_admins' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('APP_INITIAL_ADMINS', env('APP_ADMINS', '')))

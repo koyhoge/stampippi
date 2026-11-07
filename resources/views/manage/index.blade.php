@@ -9,9 +9,11 @@
         <a href="{{ route('my.index') }}" class="inline-flex items-center gap-1.5 bg-indigo-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-xl shadow-sm">
             <span>🗺️ ラリー・シリーズ管理</span>
         </a>
-        <a href="{{ route('my.groups.index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-bold px-4 py-2 rounded-xl transition">
-            <span>👥 グループ管理</span>
-        </a>
+        @if ($user->canManageAnyGroup())
+            <a href="{{ route('my.groups.index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-bold px-4 py-2 rounded-xl transition">
+                <span>👥 グループ管理</span>
+            </a>
+        @endif
     </div>
 
     <!-- Management Header & Quick Actions -->
@@ -21,8 +23,10 @@
                 <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">RALLY MANAGEMENT</span>
                 @if ($user->isAdmin())
                     <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">👑 管理者 (Admin)</span>
-                @else
+                @elseif ($user->groups()->exists())
                     <span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">👥 グループメンバー</span>
+                @else
+                    <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">👤 一般ユーザー</span>
                 @endif
             </div>
             <h1 class="text-2xl font-extrabold text-slate-900">
@@ -31,8 +35,10 @@
             <p class="text-xs text-slate-500">
                 @if ($user->isAdmin())
                     ラリーシリーズおよびスタンプラリーの作成・ベニュー管理が行えます。
+                @elseif ($user->groups()->exists())
+                    作成したスタンプラリーや所属グループのラリー・ベニュー管理が行えます。
                 @else
-                    所属グループのシリーズに属するスタンプラリーの作成・ベニュー管理が行えます。
+                    自身が作成した単発スタンプラリーやベニューの管理が行えます。
                 @endif
             </p>
         </div>
@@ -90,6 +96,7 @@
     </section>
 
     <!-- Manageable Rally Series -->
+    @if ($user->canCreateSeries() || $manageableSeries->isNotEmpty())
     <section class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
@@ -129,5 +136,6 @@
             </div>
         @endif
     </section>
+    @endif
 </div>
 @endsection
