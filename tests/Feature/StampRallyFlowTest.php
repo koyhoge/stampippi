@@ -376,6 +376,37 @@ class StampRallyFlowTest extends TestCase
 
         auth()->logout();
         $this->post('/dev-login', ['user_id' => $player->id])->assertStatus(403);
+
+        // 12. GitHub OAuth callback creates and logs in user via Socialite
+        $fakeGithubUser = new \Laravel\Socialite\Two\User();
+        $fakeGithubUser->map([
+            'id' => '98765432',
+            'nickname' => 'octocat_dev',
+            'name' => 'Octo Cat',
+            'email' => 'octocat@github.example.com',
+            'avatar' => 'https://avatars.githubusercontent.com/u/98765432',
+        ]);
+
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
+            ->with('github')
+            ->once()
+            ->andReturn(new class($fakeGithubUser) {
+                public function __construct(private $user) {}
+                public function user()
+                {
+                    return $this->user;
+                }
+            });
+
+        $this->get('/auth/github/callback')
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'handle' => 'octocat_dev',
+            'github_id' => '98765432',
+            'email' => 'octocat@github.example.com',
+        ]);
     }
 
     public function test_location_period_window_is_enforced_when_specified(): void

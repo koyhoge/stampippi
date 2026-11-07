@@ -18,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
+        'github_id',
         'avatar_url',
         'is_admin',
     ];

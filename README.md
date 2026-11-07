@@ -34,7 +34,7 @@
   - 本番想定: Neon (Serverless PostgreSQL) 等（`.env` の切り替えのみで対応）
 - **地図表示**: Leaflet.js + OpenStreetMap（APIキー不要）
 - **位置距離計算**: `mjaschen/phpgeo`
-- **認証**: Laravel Socialite (Google OAuth 2.0) ＋ `@handle` / メールアドレス認証
+- **認証**: Laravel Socialite (Google / GitHub OAuth 2.0) ＋ `@handle` / メールアドレス認証
 
 ---
 
@@ -100,10 +100,14 @@ DB_USERNAME=neondb_owner
 DB_PASSWORD=your_password
 DB_SSLMODE=require
 
-# Google OAuth 認証設定
+# Google / GitHub OAuth 認証設定
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
+
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_REDIRECT_URI="${APP_URL}/auth/github/callback"
 
 # スタンプ画像ストレージ ドライバ設定 (public / laravel_cloud / s3 / database または独自プラグイン)
 # 1) Laravel Cloud の Object Storage を使う場合:

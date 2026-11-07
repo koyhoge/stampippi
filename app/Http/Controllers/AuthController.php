@@ -141,6 +141,69 @@ class AuthController extends Controller
             ->with('status', 'Googleアカウントでログインしました。');
     }
 
+    public function redirectToGithub(): RedirectResponse
+    {
+        if (empty(config('services.github.client_id'))) {
+            return redirect()->route('login')->withErrors([
+                'login' => '.env に GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET が設定されていません。ローカル環境では下の「開発用クイックログイン」またはメール登録をご利用ください。',
+            ]);
+        }
+
+        return Socialite::driver('github')->redirect();
+    }
+
+    public function handleGithubCallback(Request $request): RedirectResponse
+    {
+        try {
+            $githubUser = Socialite::driver('github')->user();
+        } catch (\Throwable $e) {
+            return redirect()->route('login')->withErrors([
+                'login' => 'GitHub 認証に失敗しました: ' . $e->getMessage(),
+            ]);
+        }
+
+        $githubId = (string) $githubUser->getId();
+        $email = $githubUser->getEmail();
+
+        $user = User::where('github_id', $githubId)
+            ->when($email, fn ($query) => $query->orWhere('email', $email))
+            ->first();
+
+        if ($user) {
+            $user->update([
+                'github_id' => $githubId,
+                'avatar_url' => $githubUser->getAvatar() ?: $user->avatar_url,
+            ]);
+        } else {
+            $rawHandle = $githubUser->getNickname()
+                ?: ($email ? Str::before($email, '@') : 'github_user');
+            $baseHandle = strtolower((string) preg_replace('/[^a-zA-Z0-9_-]/', '_', $rawHandle));
+            $baseHandle = substr(trim($baseHandle, '_'), 0, 26) ?: 'user';
+
+            $handle = $baseHandle;
+            $counter = 1;
+            while (User::where('handle', $handle)->exists()) {
+                $handle = $baseHandle . '_' . $counter++;
+            }
+
+            $resolvedEmail = $email ?: ($handle . '@users.noreply.github.com');
+
+            $user = User::create([
+                'handle' => $handle,
+                'name' => $githubUser->getName() ?: ($githubUser->getNickname() ?: $handle),
+                'email' => strtolower($resolvedEmail),
+                'github_id' => $githubId,
+                'avatar_url' => $githubUser->getAvatar(),
+            ]);
+        }
+
+        Auth::login($user, true);
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('dashboard'))
+            ->with('status', 'GitHubアカウントでログインしました。');
+    }
+
     public function editProfile(Request $request): View
     {
         return view('auth.profile', [

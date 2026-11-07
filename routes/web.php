@@ -22,6 +22,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/dev-login', [AuthController::class, 'devLogin'])->name('dev.login');
     Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
     Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+    Route::get('/auth/github/redirect', [AuthController::class, 'redirectToGithub'])->name('auth.github.redirect');
+    Route::get('/auth/github/callback', [AuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
 });
 
 // Authenticated user routes
