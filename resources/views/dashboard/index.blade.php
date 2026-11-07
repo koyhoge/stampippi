@@ -33,7 +33,7 @@
 
         @if ($participations->isEmpty())
             <div class="bg-white rounded-2xl border border-slate-200 p-6 text-sm text-slate-500">
-                まだ参加中のスタンプラリーはありません。<a href="{{ route('home') }}" class="text-indigo-600 font-semibold hover:underline">公開中のスタンプラリーを探す →</a>
+                まだ参加中のスタンプラリーはありません。下の「公開中のスタンプラリー」から選んで参加できます。
             </div>
         @else
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -83,6 +83,40 @@
                             @endif
                         </div>
                     </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
+    <!-- Public Rallies to Join -->
+    <section class="space-y-4">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">🗺️ 公開中のスタンプラリー一覧 ({{ $publicRallies->count() }}件)</h2>
+            <p class="text-xs text-slate-500">参加したいスタンプラリーを選んでスタンプ帳を開けます</p>
+        </div>
+        @if ($publicRallies->isEmpty())
+            <p class="text-sm text-slate-500 bg-white rounded-xl p-5 border border-slate-200">現在公開中のスタンプラリーはありません。</p>
+        @else
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                @foreach ($publicRallies as $pubRally)
+                    <a href="{{ route('rallies.show', $pubRally) }}" class="bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 p-5 flex flex-col justify-between gap-3 transition">
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-slate-500 truncate">{{ $pubRally->ownerName() }}</span>
+                                <span class="font-bold {{ $pubRally->isCurrentlyActive() ? 'text-emerald-600' : 'text-amber-600' }}">
+                                    {{ $pubRally->isCurrentlyActive() ? '● 開催中' : '期間外' }}
+                                </span>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">{{ $pubRally->title }}</h3>
+                            @if ($pubRally->series)
+                                <p class="text-xs text-indigo-600 mt-0.5">📚 {{ $pubRally->series->title }}</p>
+                            @endif
+                        </div>
+                        <div class="text-xs text-slate-500 pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span>📍 {{ $pubRally->locations->count() }} ベニュー</span>
+                            <span class="font-semibold text-indigo-600">開く →</span>
+                        </div>
+                    </a>
                 @endforeach
             </div>
         @endif

@@ -45,12 +45,19 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
+        $publicRallies = StampRally::with(['organization', 'series', 'locations'])
+            ->where('visibility', 'public')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('id')
+            ->get();
+
         return view('dashboard.index', compact(
             'user',
             'participations',
             'stampsByRally',
             'manageableSeries',
-            'manageableRallies'
+            'manageableRallies',
+            'publicRallies'
         ));
     }
 }

@@ -19,7 +19,6 @@
                     <span>Stampippi</span>
                 </a>
                 <nav class="hidden sm:flex items-center gap-4 text-sm font-medium text-slate-600">
-                    <a href="{{ route('home') }}" class="hover:text-indigo-600 transition">ラリーを探す</a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="hover:text-indigo-600 transition">マイページ・管理</a>
                         <a href="{{ route('my.rallies.create') }}" class="hover:text-indigo-600 transition">＋ラリー作成</a>
@@ -86,21 +85,21 @@
 
     <!-- Smartphone Bottom Navigation Bar -->
     <nav class="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 z-50 flex items-center justify-around h-14 px-2 shadow-lg">
-        <a href="{{ route('home') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('home') ? 'text-indigo-600' : 'text-slate-600' }}">
-            <span class="text-base leading-none">🗺️</span>
-            <span class="mt-0.5">ラリー一覧</span>
-        </a>
         @auth
             <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('dashboard') ? 'text-indigo-600' : 'text-slate-600' }}">
                 <span class="text-base leading-none">📖</span>
-                <span class="mt-0.5">マイスタンプ帳</span>
+                <span class="mt-0.5">マイページ</span>
+            </a>
+            <a href="{{ route('my.rallies.create') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('my.rallies.create') ? 'text-indigo-600' : 'text-slate-600' }}">
+                <span class="text-base leading-none">➕</span>
+                <span class="mt-0.5">ラリー作成</span>
             </a>
             <a href="{{ route('profile.edit') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('profile.*') ? 'text-indigo-600' : 'text-slate-600' }}">
                 <span class="text-base leading-none">👤</span>
                 <span class="mt-0.5">プロフィール</span>
             </a>
         @else
-            <a href="{{ route('login') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('login') ? 'text-indigo-600' : 'text-slate-600' }}">
+            <a href="{{ route('home') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('home', 'login') ? 'text-indigo-600' : 'text-slate-600' }}">
                 <span class="text-base leading-none">🔑</span>
                 <span class="mt-0.5">ログイン</span>
             </a>

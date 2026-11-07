@@ -21,9 +21,8 @@ class StampRallyFlowTest extends TestCase
 
         $this->get('/')
             ->assertStatus(200)
-            ->assertSee('PHPカンファレンススタンプラリー')
-            ->assertSee('日本全国PHPカンファレンススタンプラリー 2026')
-            ->assertSee('中央線・東京街歩き常設スタンプラリー');
+            ->assertSee('Stampippi')
+            ->assertSee('ログイン');
 
         $this->get('/orgs/phpcon')
             ->assertStatus(200)

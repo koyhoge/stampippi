@@ -15,26 +15,17 @@ use Illuminate\View\View;
 
 class PublicRallyController extends Controller
 {
-    public function home(): View
+    public function home(Request $request): View|RedirectResponse
     {
-        $seriesList = RallySeries::with(['organization', 'creator', 'rallies' => function ($q) {
-            $q->where('visibility', 'public');
-        }])
-            ->where('visibility', 'public')
-            ->latest()
-            ->get();
+        if ($request->user()) {
+            return redirect()->route('dashboard');
+        }
 
-        $rallies = StampRally::with(['organization', 'series', 'creator', 'locations'])
-            ->where('visibility', 'public')
-            ->orderByDesc('starts_at')
-            ->orderByDesc('id')
-            ->get();
+        $devUsers = app()->environment('local', 'testing')
+            ? \App\Models\User::orderBy('id')->get()
+            : collect();
 
-        $organizations = Organization::withCount(['series', 'rallies'])
-            ->orderBy('name')
-            ->get();
-
-        return view('public.home', compact('seriesList', 'rallies', 'organizations'));
+        return view('public.home', compact('devUsers'));
     }
 
     public function showOrganization(Organization $organization): View
