@@ -327,6 +327,13 @@
 @push('scripts')
 <script>
     const existingLocations = @json($rally->locations);
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str ?? '';
+        return div.innerHTML;
+    }
+
     const latInput = document.getElementById('new-lat');
     const lngInput = document.getElementById('new-lng');
     const radiusInput = document.getElementById('new-radius');
@@ -338,7 +345,7 @@
     }).addTo(pickerMap);
 
     existingLocations.forEach(loc => {
-        L.marker([loc.latitude, loc.longitude]).addTo(pickerMap).bindPopup(loc.name);
+        L.marker([loc.latitude, loc.longitude]).addTo(pickerMap).bindPopup(escapeHtml(loc.name));
         L.circle([loc.latitude, loc.longitude], { radius: loc.radius_meters, color: '#6366F1', fillOpacity: 0.15 }).addTo(pickerMap);
     });
 
@@ -380,7 +387,7 @@
         lngInput.value = Number(lng).toFixed(7);
         syncPreview();
         pickerMap.setView([lat, lng], 16);
-        previewMarker.bindPopup(label).openPopup();
+        previewMarker.bindPopup(escapeHtml(label)).openPopup();
     }
 
     async function searchAddress() {
@@ -425,7 +432,7 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'w-full text-left px-3 py-2 hover:bg-indigo-50 transition flex items-center justify-between gap-2';
-                btn.innerHTML = `<span class="truncate text-slate-800">📍 ${item.display_name}</span><span class="text-[10px] text-indigo-600 font-bold shrink-0">選択</span>`;
+                btn.innerHTML = `<span class="truncate text-slate-800">📍 ${escapeHtml(item.display_name)}</span><span class="text-[10px] text-indigo-600 font-bold shrink-0">選択</span>`;
                 btn.addEventListener('click', () => {
                     applyLocationResult(lat, lng, item.display_name);
                 });

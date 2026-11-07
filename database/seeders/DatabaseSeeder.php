@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
                 'name' => 'KOYAMA Tetsuji',
                 'email' => 'koyama@example.com',
                 'password' => Hash::make('password'),
-                'is_admin' => true,
             ]
         );
+        $koyama->forceFill(['is_admin' => true])->save();
 
         $staff = User::updateOrCreate(
             ['handle' => 'phpcon_staff'],
@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
                 'name' => 'PHPカンファレンス実行委員',
                 'email' => 'staff@example.com',
                 'password' => Hash::make('password'),
-                'is_admin' => false,
             ]
         );
+        $staff->forceFill(['is_admin' => false])->save();
 
         $player = User::updateOrCreate(
             ['handle' => 'participant'],
@@ -42,9 +42,9 @@ class DatabaseSeeder extends Seeder
                 'name' => 'スタンプラリー参加者',
                 'email' => 'player@example.com',
                 'password' => Hash::make('password'),
-                'is_admin' => false,
             ]
         );
+        $player->forceFill(['is_admin' => false])->save();
 
         // Group: PHPカンファレンス運営
         $group = Group::updateOrCreate(

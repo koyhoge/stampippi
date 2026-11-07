@@ -223,7 +223,7 @@
                     <div class="text-slate-500" id="gps-coords-display">スタンプ押印時にスマートフォンの位置情報を取得します。</div>
                 </div>
 
-                @if (config('app.dev_tools'))
+                @if (\App\Models\User::isDevToolsEnabled())
                     <details class="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs group">
                         <summary class="font-extrabold text-amber-900 cursor-pointer flex items-center justify-between list-none">
                             <span>🛠️ 開発用 GPSシミュレーター (タップで開閉)</span>
@@ -273,6 +273,13 @@
 @push('scripts')
 <script>
     const mapLocations = @json($mapLocations);
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str ?? '';
+        return div.innerHTML;
+    }
+
     const defaultCenter = mapLocations.length > 0
         ? [mapLocations[0].latitude, mapLocations[0].longitude]
         : [35.681236, 139.767125];
@@ -290,15 +297,15 @@
 
         const marker = L.marker(latlng).addTo(map);
         const iconHtml = loc.icon_image_url
-            ? `<img src="${loc.icon_image_url}" alt="" style="width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
-            : `${loc.icon_emoji} `;
+            ? `<img src="${escapeHtml(loc.icon_image_url)}" alt="" style="width:20px;height:20px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
+            : `${escapeHtml(loc.icon_emoji)} `;
         marker.bindPopup(`
             <div class="text-xs space-y-1">
-                <div class="font-bold text-sm">${iconHtml}${loc.name}</div>
-                <div class="text-slate-600">判定半径: ${loc.radius_meters}m</div>
-                <div class="text-slate-500">${loc.availability_label}</div>
+                <div class="font-bold text-sm">${iconHtml}${escapeHtml(loc.name)}</div>
+                <div class="text-slate-600">判定半径: ${Number(loc.radius_meters)}m</div>
+                <div class="text-slate-500">${escapeHtml(loc.availability_label)}</div>
                 <div class="font-bold ${loc.is_stamped ? 'text-emerald-600' : 'text-indigo-600'}">
-                    ${loc.is_stamped ? '💮 獲得済み (' + loc.stamped_at + ')' : '未獲得'}
+                    ${loc.is_stamped ? '💮 獲得済み (' + escapeHtml(loc.stamped_at) + ')' : '未獲得'}
                 </div>
             </div>
         `);
@@ -353,7 +360,7 @@
                 fillOpacity: 0.9
             }).addTo(map);
         }
-        userMarker.bindPopup(label).openPopup();
+        userMarker.bindPopup(escapeHtml(label)).openPopup();
         updateDistanceBadges(lat, lng);
     }
 
@@ -385,7 +392,7 @@
         }
     }
 
-    @if (config('app.dev_tools'))
+    @if (\App\Models\User::isDevToolsEnabled())
     map.on('click', function(e) {
         const lat = Number(e.latlng.lat.toFixed(7));
         const lng = Number(e.latlng.lng.toFixed(7));
@@ -524,7 +531,7 @@
             }
 
             if (quickBtn) {
-                quickBtn.innerHTML = `<span>💮 「${nearestLoc.name}」(約${minDistance}m) にチェックイン中...</span>`;
+                quickBtn.innerHTML = `<span>💮 「${escapeHtml(nearestLoc.name)}」(約${Number(minDistance)}m) にチェックイン中...</span>`;
             }
 
             nearestForm.querySelector('.input-lat').value = coords.latitude;

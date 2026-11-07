@@ -87,6 +87,8 @@ class StampImageStorageManager
 
     public function store(UploadedFile $file): string
     {
+        SvgSanitizer::sanitizeUploadedFile($file);
+
         return $this->driver()->store($file);
     }
 

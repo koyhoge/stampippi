@@ -98,8 +98,12 @@ class SeriesManageController extends Controller
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
         ]);
 
+        $resolvedGroupId = $user->isAdmin()
+            ? (($validated['group_id'] ?? null) ?: null)
+            : $series->group_id;
+
         $series->update([
-            'group_id' => $validated['group_id'] ?: null,
+            'group_id' => $resolvedGroupId,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,

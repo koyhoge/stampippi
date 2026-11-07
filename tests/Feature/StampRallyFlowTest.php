@@ -48,15 +48,14 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Admin User',
             'email' => 'owner@example.com',
             'password' => 'password',
-            'is_admin' => true,
         ]);
+        $admin->forceFill(['is_admin' => true])->save();
 
         $coStaff = User::create([
             'handle' => 'staff_member',
             'name' => 'Staff User',
             'email' => 'staff@example.com',
             'password' => 'password',
-            'is_admin' => false,
         ]);
 
         $player = User::create([
@@ -64,7 +63,6 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Player User',
             'email' => 'player@example.com',
             'password' => 'password',
-            'is_admin' => false,
         ]);
 
         // General user can view participant dashboard (/dashboard) and search active rallies, but cannot access management (/my) or create rallies
@@ -180,7 +178,7 @@ class StampRallyFlowTest extends TestCase
         Storage::fake('public');
         $fakeStampSvg = UploadedFile::fake()->createWithContent(
             'custom_stamp.svg',
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#4F46E5"/></svg>'
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="alert(1)"><script>alert(2)</script><circle cx="32" cy="32" r="28" fill="#4F46E5" onclick="evil()"/></svg>'
         );
 
         $this->actingAs($coStaff)
@@ -200,6 +198,11 @@ class StampRallyFlowTest extends TestCase
         $this->assertSame('custom', $location->stamp_icon_type);
         $this->assertTrue($location->hasCustomImage());
         Storage::disk('public')->assertExists($location->stamp_icon_value);
+        $savedSvgContent = Storage::disk('public')->get($location->stamp_icon_value);
+        $this->assertStringNotContainsString('<script', $savedSvgContent);
+        $this->assertStringNotContainsString('onload', $savedSvgContent);
+        $this->assertStringNotContainsString('onclick', $savedSvgContent);
+        $this->assertStringContainsString('<circle', $savedSvgContent);
 
         // 6c. Switching service-wide stamp storage driver to 'database' (serverless inline Data URI plugin)
         config(['stamp.image_driver' => 'database']);
@@ -380,16 +383,18 @@ class StampRallyFlowTest extends TestCase
         // 12. GitHub OAuth callback creates and logs in user via Socialite, and auto-promotes when matched by APP_INITIAL_ADMINS
         config(['app.initial_admins' => ['github:octocat_dev', 'google:boss@example.com']]);
 
-        // 12a. Password registration with a matching handle never grants admin
+        // 12a. Email/password registration and login endpoints are removed (OAuth only)
         $this->post('/register', [
             'handle' => 'octocat_dev_fake',
             'name' => 'Spoof',
             'email' => 'spoof@example.com',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
-        ])->assertRedirect();
-        $this->assertFalse(User::where('handle', 'octocat_dev_fake')->first()->isAdmin());
-        auth()->logout();
+        ])->assertStatus(404);
+        $this->post('/login', [
+            'login' => 'koyhoge',
+            'password' => 'password',
+        ])->assertStatus(405);
 
         // 12b. Pre-registered password account with the admin's email is NOT promoted when OAuth links to it
         $preRegistered = User::create([
@@ -443,8 +448,8 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Creator',
             'email' => 'creator@example.com',
             'password' => 'password',
-            'is_admin' => true,
         ]);
+        $creator->forceFill(['is_admin' => true])->save();
 
         $rally = StampRally::create([
             'creator_id' => $creator->id,

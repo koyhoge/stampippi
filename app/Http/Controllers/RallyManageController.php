@@ -86,7 +86,9 @@ class RallyManageController extends Controller
             abort_unless($user->canManageSeries($series), 403, '選択されたラリーシリーズにスタンプラリーを追加する権限がありません。');
         }
 
-        $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
+        $resolvedGroupId = ($series && $series->group_id && ! $user->isAdmin())
+            ? $series->group_id
+            : (($validated['group_id'] ?? null) ?: $series?->group_id);
 
         $rally = StampRally::create([
             'creator_id' => $user->id,
@@ -191,7 +193,9 @@ class RallyManageController extends Controller
             abort_unless($user->canManageSeries($series), 403, '選択されたラリーシリーズにスタンプラリーを追加する権限がありません。');
         }
 
-        $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
+        $resolvedGroupId = ($series && $series->group_id && ! $user->isAdmin())
+            ? $series->group_id
+            : (($validated['group_id'] ?? null) ?: $series?->group_id);
 
         $rally->update([
             'group_id' => $resolvedGroupId,

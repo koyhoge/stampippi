@@ -14,16 +14,14 @@ Route::get('/groups/{group:slug}', [PublicRallyController::class, 'showGroup'])-
 Route::get('/series/{series:slug}', [PublicRallyController::class, 'showSeries'])->name('series.show');
 Route::get('/rallies/{rally:slug}', [PublicRallyController::class, 'showRally'])->name('rallies.show');
 
-// Authentication
+// Authentication (OAuth + Local Dev Login only; email/password auth removed)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
-    Route::post('/dev-login', [AuthController::class, 'devLogin'])->name('dev.login');
-    Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
-    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
-    Route::get('/auth/github/redirect', [AuthController::class, 'redirectToGithub'])->name('auth.github.redirect');
-    Route::get('/auth/github/callback', [AuthController::class, 'handleGithubCallback'])->name('auth.github.callback');
+    Route::post('/dev-login', [AuthController::class, 'devLogin'])->middleware('throttle:20,1')->name('dev.login');
+    Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->middleware('throttle:20,1')->name('auth.google.redirect');
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->middleware('throttle:20,1')->name('auth.google.callback');
+    Route::get('/auth/github/redirect', [AuthController::class, 'redirectToGithub'])->middleware('throttle:20,1')->name('auth.github.redirect');
+    Route::get('/auth/github/callback', [AuthController::class, 'handleGithubCallback'])->middleware('throttle:20,1')->name('auth.github.callback');
 });
 
 // Authenticated user routes
@@ -33,9 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
 
     // Player actions (login required)
-    Route::post('/rallies/{rally:slug}/join', [PublicRallyController::class, 'joinRally'])->name('rallies.join');
+    Route::post('/rallies/{rally:slug}/join', [PublicRallyController::class, 'joinRally'])->middleware('throttle:30,1')->name('rallies.join');
     Route::post('/rallies/{rally:slug}/archive', [DashboardController::class, 'toggleArchive'])->name('rallies.archive');
-    Route::post('/rallies/{rally:slug}/locations/{location}/checkin', [PublicRallyController::class, 'checkin'])->name('rallies.checkin');
+    Route::post('/rallies/{rally:slug}/locations/{location}/checkin', [PublicRallyController::class, 'checkin'])->middleware('throttle:30,1')->name('rallies.checkin');
     Route::get('/rallies/{rally:slug}/certificate', [PublicRallyController::class, 'certificate'])->name('rallies.certificate');
 
     // Participant My Page (参加型)

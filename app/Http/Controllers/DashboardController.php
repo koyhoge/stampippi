@@ -202,7 +202,7 @@ class DashboardController extends Controller
             ])->withInput();
         }
 
-        $targetUser->update(['is_admin' => true]);
+        $targetUser->forceFill(['is_admin' => true])->save();
 
         return back()->with('status', "{$targetUser->name} (@{$targetUser->handle}) さんを管理者に設定しました。シリーズやスタンプラリーを作成できるようになりました。");
     }
@@ -217,7 +217,7 @@ class DashboardController extends Controller
             ]);
         }
 
-        $user->update(['is_admin' => false]);
+        $user->forceFill(['is_admin' => false])->save();
 
         return back()->with('status', "@{$user->handle} さんの管理者権限を解除しました。");
     }

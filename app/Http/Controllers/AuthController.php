@@ -16,61 +16,16 @@ class AuthController extends Controller
 {
     public function showLogin(): View
     {
-        $devUsers = config('app.dev_tools')
+        $devUsers = User::isDevToolsEnabled()
             ? User::orderBy('id')->get()
             : collect();
 
         return view('auth.login', compact('devUsers'));
     }
 
-    public function login(Request $request): RedirectResponse
-    {
-        $credentials = $request->validate([
-            'login' => ['required', 'string'],
-            'password' => ['required', 'string'],
-        ]);
-
-        $loginInput = ltrim(trim($credentials['login']), '@');
-        $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'handle';
-
-        if (Auth::attempt([$field => $loginInput, 'password' => $credentials['password']], $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
-            return redirect()->intended(route('dashboard'))
-                ->with('status', 'ログインしました。');
-        }
-
-        return back()->withErrors([
-            'login' => '認証情報が一致しません。メールアドレスまたは @handle とパスワードを確認してください。',
-        ])->onlyInput('login');
-    }
-
-    public function register(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'handle' => ['required', 'string', 'max:32', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:users,handle'],
-            'name' => ['required', 'string', 'max:80'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-        ]);
-
-        $user = User::create([
-            'handle' => strtolower($validated['handle']),
-            'name' => $validated['name'],
-            'email' => strtolower($validated['email']),
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard'))
-            ->with('status', "ようこそ、@{$user->handle} さん！アカウントを作成しました。");
-    }
-
     public function devLogin(Request $request): RedirectResponse
     {
-        abort_unless((bool) config('app.dev_tools'), 403, '現在、開発用ログイン機能は無効化されています。');
+        abort_unless(User::isDevToolsEnabled(), 403, '現在、開発用ログイン機能は無効化されています。');
 
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -88,7 +43,7 @@ class AuthController extends Controller
     {
         if (empty(config('services.google.client_id'))) {
             return redirect()->route('login')->withErrors([
-                'login' => '.env に GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET が設定されていません。ローカル環境では下の「開発用クイックログイン」またはメール登録をご利用ください。',
+                'login' => '.env に GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET が設定されていません。ローカル環境では「開発用ワンクリックログイン」をご利用ください。',
             ]);
         }
 
@@ -152,7 +107,7 @@ class AuthController extends Controller
     {
         if (empty(config('services.github.client_id'))) {
             return redirect()->route('login')->withErrors([
-                'login' => '.env に GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET が設定されていません。ローカル環境では下の「開発用クイックログイン」またはメール登録をご利用ください。',
+                'login' => '.env に GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET が設定されていません。ローカル環境では「開発用ワンクリックログイン」をご利用ください。',
             ]);
         }
 

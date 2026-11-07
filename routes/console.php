@@ -15,7 +15,7 @@ Artisan::command('user:admin {identifier} {--revoke : 管理者権限を解除�
     }
 
     $revoke = (bool) $this->option('revoke');
-    $user->update(['is_admin' => ! $revoke]);
+    $user->forceFill(['is_admin' => ! $revoke])->save();
 
     if ($revoke) {
         $this->info("{$user->name} (@{$user->handle}) の管理者権限を解除しました。");

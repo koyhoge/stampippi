@@ -22,7 +22,7 @@ class PublicRallyController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $devUsers = config('app.dev_tools')
+        $devUsers = User::isDevToolsEnabled()
             ? User::orderBy('id')->get()
             : collect();
 
@@ -129,6 +129,10 @@ class PublicRallyController extends Controller
 
     public function joinRally(Request $request, StampRally $rally): RedirectResponse
     {
+        if ($rally->visibility === 'draft' && ! $request->user()->canManageRally($rally)) {
+            abort(404);
+        }
+
         if (! $rally->isCurrentlyActive()) {
             return back()->withErrors([
                 'checkin' => 'このスタンプラリーは現在開催期間外のため参加できません。',
@@ -155,6 +159,10 @@ class PublicRallyController extends Controller
         StampLocation $location,
         StampCheckinService $checkinService
     ): JsonResponse|RedirectResponse {
+        if ($rally->visibility === 'draft' && ! $request->user()->canManageRally($rally)) {
+            abort(404);
+        }
+
         $validated = $request->validate([
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],

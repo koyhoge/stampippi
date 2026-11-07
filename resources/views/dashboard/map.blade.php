@@ -141,7 +141,7 @@
             : '';
 
         const innerIconHtml = primary.icon_image_url
-            ? `<img src="${primary.icon_image_url}" alt="" style="width:28px;height:28px;object-fit:contain;">`
+            ? `<img src="${escapeHtml(primary.icon_image_url)}" alt="" style="width:28px;height:28px;object-fit:contain;">`
             : `<span>${primary.icon_emoji}</span>`;
 
         const icon = L.divIcon({
@@ -159,7 +159,7 @@
 
         const itemsHtml = group.map(item => {
             const itemIconHtml = item.icon_image_url
-                ? `<img src="${item.icon_image_url}" alt="" style="width:18px;height:18px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
+                ? `<img src="${escapeHtml(item.icon_image_url)}" alt="" style="width:18px;height:18px;object-fit:contain;display:inline-block;vertical-align:middle;margin-right:4px;">`
                 : `${item.icon_emoji} `;
             return `
                 <div style="padding:6px 0;border-top:1px solid #f1f5f9;">
@@ -167,7 +167,7 @@
                         ${itemIconHtml}${escapeHtml(item.location_name)}
                     </div>
                     <div style="font-size:12px;margin-top:2px;">
-                        🗺️ ラリー: <a href="${item.rally_url}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
+                        🗺️ ラリー: <a href="${escapeHtml(item.rally_url)}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
                     </div>
                     <div style="font-size:11px;color:#64748b;margin-top:2px;">
                         🕒 打刻日時: <strong>${escapeHtml(item.stamped_at)}</strong>

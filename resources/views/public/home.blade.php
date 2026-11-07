@@ -13,8 +13,8 @@
     </div>
 
     <!-- Social OAuth Login -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
-        <div class="space-y-2.5">
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div class="space-y-3">
             <a href="{{ route('auth.google.redirect') }}" class="flex items-center justify-center gap-2.5 w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold text-sm px-5 py-3 rounded-xl shadow-sm transition">
                 <span>🌐 Google アカウントでログイン</span>
             </a>
@@ -26,34 +26,9 @@
                 <span>GitHub アカウントでログイン</span>
             </a>
         </div>
-
-        <div class="relative flex py-1 items-center">
-            <div class="flex-grow border-t border-slate-200"></div>
-            <span class="flex-shrink mx-3 text-xs text-slate-400">または</span>
-            <div class="flex-grow border-t border-slate-200"></div>
-        </div>
-
-        <!-- @handle / Email Login Form -->
-        <form method="POST" action="{{ route('login.submit') }}" class="space-y-4">
-            @csrf
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">@handle または メールアドレス</label>
-                <input type="text" name="login" value="{{ old('login') }}" required placeholder="@handle / email" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">パスワード</label>
-                <input type="password" name="password" required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm">
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl shadow-sm transition">
-                ログイン
-            </button>
-        </form>
-
-        <div class="pt-2 border-t border-slate-100 text-center">
-            <a href="{{ route('login') }}" class="text-xs font-semibold text-indigo-600 hover:underline">
-                新規アカウント作成はこちら →
-            </a>
-        </div>
+        <p class="text-center text-[11px] text-slate-400">
+            初回ログイン時にアカウントが自動作成されます（ログイン後に @handle を変更可能）
+        </p>
     </div>
 
     @if ($devUsers->isNotEmpty())

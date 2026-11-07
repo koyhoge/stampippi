@@ -20,8 +20,12 @@ class User extends Authenticatable
         'google_id',
         'github_id',
         'avatar_url',
-        'is_admin',
     ];
+
+    public static function isDevToolsEnabled(): bool
+    {
+        return (bool) config('app.dev_tools') && ! app()->isProduction();
+    }
 
     protected $hidden = [
         'password',
