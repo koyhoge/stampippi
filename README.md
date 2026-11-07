@@ -36,7 +36,7 @@
   - 本番想定: Neon (Serverless PostgreSQL) 等（`.env` の切り替えのみで対応）
 - **地図表示**: Leaflet.js + OpenStreetMap（APIキー不要）
 - **位置距離計算**: `mjaschen/phpgeo`
-- **認証**: Laravel Socialite (Google / GitHub OAuth 2.0) ＋ `@handle` / メールアドレス認証
+- **認証**: Laravel Socialite (Google / GitHub OAuth 2.0) ＋ 開発用ワンクリックログイン（`APP_DEV_TOOLS=true` 時のみ）
 
 ---
 
