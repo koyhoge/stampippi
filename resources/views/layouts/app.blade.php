@@ -20,8 +20,14 @@
                 </a>
                 <nav class="hidden sm:flex items-center gap-4 text-sm font-medium text-slate-600">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="hover:text-indigo-600 transition">マイページ・管理</a>
-                        <a href="{{ route('my.rallies.create') }}" class="hover:text-indigo-600 transition">＋ラリー作成</a>
+                        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
+                            📖 マイページ
+                        </a>
+                        @if (auth()->user()->canAccessManagement())
+                            <a href="{{ route('my.index') }}" class="{{ request()->routeIs('my.*') ? 'text-indigo-600 font-bold' : 'hover:text-indigo-600' }} transition">
+                                ⚙️ ラリー管理
+                            </a>
+                        @endif
                     @endauth
                 </nav>
             </div>
@@ -75,6 +81,9 @@
                 <a href="{{ route('home') }}" class="hover:text-slate-800">トップ</a>
                 @auth
                     <a href="{{ route('dashboard') }}" class="hover:text-slate-800">マイページ</a>
+                    @if (auth()->user()->canAccessManagement())
+                        <a href="{{ route('my.index') }}" class="hover:text-slate-800">ラリー管理</a>
+                    @endif
                     <a href="{{ route('profile.edit') }}" class="hover:text-slate-800">プロフィール設定</a>
                 @else
                     <a href="{{ route('login') }}" class="hover:text-slate-800">ログイン</a>
@@ -90,10 +99,12 @@
                 <span class="text-base leading-none">📖</span>
                 <span class="mt-0.5">マイページ</span>
             </a>
-            <a href="{{ route('my.rallies.create') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('my.rallies.create') ? 'text-indigo-600' : 'text-slate-600' }}">
-                <span class="text-base leading-none">➕</span>
-                <span class="mt-0.5">ラリー作成</span>
-            </a>
+            @if (auth()->user()->canAccessManagement())
+                <a href="{{ route('my.index') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('my.*') ? 'text-indigo-600' : 'text-slate-600' }}">
+                    <span class="text-base leading-none">⚙️</span>
+                    <span class="mt-0.5">ラリー管理</span>
+                </a>
+            @endif
             <a href="{{ route('profile.edit') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('profile.*') ? 'text-indigo-600' : 'text-slate-600' }}">
                 <span class="text-base leading-none">👤</span>
                 <span class="mt-0.5">プロフィール</span>
@@ -109,4 +120,3 @@
     @stack('scripts')
 </body>
 </html>
-

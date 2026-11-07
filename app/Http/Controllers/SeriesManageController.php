@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use App\Models\RallySeries;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,12 @@ class SeriesManageController extends Controller
 {
     public function create(Request $request): View
     {
-        $groups = $request->user()->groups()->orderBy('name')->get();
+        $user = $request->user();
+        abort_unless($user->canCreateSeries(), 403, 'ラリーシリーズの新規作成は管理者のみ行えます。');
+
+        $groups = $user->isAdmin()
+            ? Group::orderBy('name')->get()
+            : $user->groups()->orderBy('name')->get();
 
         return view('manage.series.form', [
             'series' => new RallySeries(['visibility' => 'public']),
@@ -24,7 +30,11 @@ class SeriesManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $groupIds = $user->groups()->pluck('groups.id')->all();
+        abort_unless($user->canCreateSeries(), 403, 'ラリーシリーズの新規作成は管理者のみ行えます。');
+
+        $groupIds = $user->isAdmin()
+            ? Group::pluck('id')->all()
+            : $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -49,9 +59,13 @@ class SeriesManageController extends Controller
 
     public function edit(Request $request, RallySeries $series): View
     {
-        abort_unless($request->user()->canManageSeries($series), 403);
+        $user = $request->user();
+        abort_unless($user->canManageSeries($series), 403);
 
-        $groups = $request->user()->groups()->orderBy('name')->get();
+        $groups = $user->isAdmin()
+            ? Group::orderBy('name')->get()
+            : $user->groups()->orderBy('name')->get();
+
         $series->load('rallies.locations');
 
         return view('manage.series.form', [
@@ -63,10 +77,12 @@ class SeriesManageController extends Controller
 
     public function update(Request $request, RallySeries $series): RedirectResponse
     {
-        abort_unless($request->user()->canManageSeries($series), 403);
-
         $user = $request->user();
-        $groupIds = $user->groups()->pluck('groups.id')->all();
+        abort_unless($user->canManageSeries($series), 403);
+
+        $groupIds = $user->isAdmin()
+            ? Group::pluck('id')->all()
+            : $user->groups()->pluck('groups.id')->all();
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],

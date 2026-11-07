@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
@@ -15,19 +16,31 @@ class RallyManageController extends Controller
     public function create(Request $request): View
     {
         $user = $request->user();
-        $groups = $user->groups()->orderBy('name')->get();
-        $groupIds = $groups->pluck('id');
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
 
-        $seriesList = RallySeries::where('creator_id', $user->id)
-            ->when($groupIds->isNotEmpty(), fn ($q) => $q->orWhereIn('group_id', $groupIds))
-            ->orderBy('title')
-            ->get();
+        if ($user->isAdmin()) {
+            $groups = Group::orderBy('name')->get();
+            $seriesList = RallySeries::with('group')->orderBy('title')->get();
+        } else {
+            $groups = $user->groups()->orderBy('name')->get();
+            $groupIds = $groups->pluck('id');
+            $seriesList = RallySeries::with('group')
+                ->whereIn('group_id', $groupIds)
+                ->orderBy('title')
+                ->get();
+        }
+
+        $defaultSeriesId = $request->query('series_id') ?: (! $user->isAdmin() ? $seriesList->first()?->id : null);
+        $defaultGroupId = $request->query('group_id');
+        if (! $defaultGroupId && $defaultSeriesId) {
+            $defaultGroupId = $seriesList->firstWhere('id', (int) $defaultSeriesId)?->group_id;
+        }
 
         $rally = new StampRally([
             'visibility' => 'public',
             'completion_condition' => 'all',
-            'rally_series_id' => $request->query('series_id'),
-            'group_id' => $request->query('group_id'),
+            'rally_series_id' => $defaultSeriesId,
+            'group_id' => $defaultGroupId,
         ]);
 
         return view('manage.rallies.form', [
@@ -43,13 +56,21 @@ class RallyManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $groupIds = $user->groups()->pluck('groups.id')->all();
+        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
+
+        $groupIds = $user->isAdmin()
+            ? Group::pluck('id')->all()
+            : $user->groups()->pluck('groups.id')->all();
+
+        $seriesRule = $user->isAdmin()
+            ? ['nullable', 'exists:rally_series,id']
+            : ['required', 'exists:rally_series,id'];
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:stamp_rallies,slug'],
             'group_id' => ['nullable', Rule::in($groupIds)],
-            'rally_series_id' => ['nullable', 'exists:rally_series,id'],
+            'rally_series_id' => $seriesRule,
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
             'completion_condition' => ['required', Rule::in(['all', 'count'])],
@@ -58,14 +79,17 @@ class RallyManageController extends Controller
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ]);
 
+        $series = null;
         if (! empty($validated['rally_series_id'])) {
             $series = RallySeries::findOrFail($validated['rally_series_id']);
             abort_unless($user->canManageSeries($series), 403);
         }
 
+        $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
+
         $rally = StampRally::create([
             'creator_id' => $user->id,
-            'group_id' => $validated['group_id'] ?: null,
+            'group_id' => $resolvedGroupId,
             'rally_series_id' => $validated['rally_series_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
@@ -90,22 +114,28 @@ class RallyManageController extends Controller
 
         $rally->load(['locations', 'series', 'group']);
 
-        $groups = $user->groups()->orderBy('name')->get();
-        $groupIds = $groups->pluck('id');
+        if ($user->isAdmin()) {
+            $groups = Group::orderBy('name')->get();
+            $seriesList = RallySeries::with('group')->orderBy('title')->get();
+            $manageableRallyIds = StampRally::where('id', '!=', $rally->id)->pluck('id');
+        } else {
+            $groups = $user->groups()->orderBy('name')->get();
+            $groupIds = $groups->pluck('id');
+            $seriesList = RallySeries::with('group')
+                ->whereIn('group_id', $groupIds)
+                ->orderBy('title')
+                ->get();
 
-        $seriesList = RallySeries::where('creator_id', $user->id)
-            ->when($groupIds->isNotEmpty(), fn ($q) => $q->orWhereIn('group_id', $groupIds))
-            ->orderBy('title')
-            ->get();
-
-        $manageableRallyIds = StampRally::where('id', '!=', $rally->id)
-            ->where(function ($q) use ($user, $groupIds) {
-                $q->where('creator_id', $user->id);
-                if ($groupIds->isNotEmpty()) {
-                    $q->orWhereIn('group_id', $groupIds);
-                }
-            })
-            ->pluck('id');
+            $manageableRallyIds = StampRally::where('id', '!=', $rally->id)
+                ->where(function ($q) use ($user, $groupIds) {
+                    $q->where('creator_id', $user->id);
+                    if ($groupIds->isNotEmpty()) {
+                        $q->orWhereIn('group_id', $groupIds)
+                            ->orWhereHas('series', fn ($sq) => $sq->whereIn('group_id', $groupIds));
+                    }
+                })
+                ->pluck('id');
+        }
 
         $copyableLocations = StampLocation::with('rally')
             ->whereIn('stamp_rally_id', $manageableRallyIds)
@@ -127,7 +157,13 @@ class RallyManageController extends Controller
         $user = $request->user();
         abort_unless($user->canManageRally($rally), 403);
 
-        $groupIds = $user->groups()->pluck('groups.id')->all();
+        $groupIds = $user->isAdmin()
+            ? Group::pluck('id')->all()
+            : $user->groups()->pluck('groups.id')->all();
+
+        $seriesRule = $user->isAdmin()
+            ? ['nullable', 'exists:rally_series,id']
+            : ['required', 'exists:rally_series,id'];
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
@@ -139,7 +175,7 @@ class RallyManageController extends Controller
                 Rule::unique('stamp_rallies', 'slug')->ignore($rally->id),
             ],
             'group_id' => ['nullable', Rule::in($groupIds)],
-            'rally_series_id' => ['nullable', 'exists:rally_series,id'],
+            'rally_series_id' => $seriesRule,
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
             'completion_condition' => ['required', Rule::in(['all', 'count'])],
@@ -148,13 +184,16 @@ class RallyManageController extends Controller
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ]);
 
+        $series = null;
         if (! empty($validated['rally_series_id'])) {
             $series = RallySeries::findOrFail($validated['rally_series_id']);
             abort_unless($user->canManageSeries($series), 403);
         }
 
+        $resolvedGroupId = ($validated['group_id'] ?? null) ?: $series?->group_id;
+
         $rally->update([
-            'group_id' => $validated['group_id'] ?: null,
+            'group_id' => $resolvedGroupId,
             'rally_series_id' => $validated['rally_series_id'] ?: null,
             'slug' => strtolower($validated['slug']),
             'title' => $validated['title'],
@@ -206,7 +245,7 @@ class RallyManageController extends Controller
         ]);
 
         return redirect()->route('my.rallies.edit', $rally)
-            ->with('status', "スタンプロケーション「{$validated['name']}」を追加しました！");
+            ->with('status', "スタンプロケーション（ベニュー）「{$validated['name']}」を追加しました！");
     }
 
     public function updateLocation(Request $request, StampRally $rally, StampLocation $location): RedirectResponse

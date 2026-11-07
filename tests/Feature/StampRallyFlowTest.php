@@ -39,13 +39,14 @@ class StampRallyFlowTest extends TestCase
             ->assertSee('グランフロント大阪');
     }
 
-    public function test_group_and_series_and_rally_hierarchy_with_gps_checkin(): void
+    public function test_admin_and_group_member_and_general_user_permissions_with_gps_checkin(): void
     {
-        $owner = User::create([
+        $admin = User::create([
             'handle' => 'koyhoge',
-            'name' => 'Owner User',
+            'name' => 'Admin User',
             'email' => 'owner@example.com',
             'password' => 'password',
+            'is_admin' => true,
         ]);
 
         $coStaff = User::create([
@@ -53,6 +54,7 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Staff User',
             'email' => 'staff@example.com',
             'password' => 'password',
+            'is_admin' => false,
         ]);
 
         $player = User::create([
@@ -60,10 +62,22 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Player User',
             'email' => 'player@example.com',
             'password' => 'password',
+            'is_admin' => false,
         ]);
 
-        // 1. Owner creates a Group
-        $this->actingAs($owner)
+        // General user can view participant dashboard (/dashboard) but cannot access management (/my) or create rallies
+        $this->actingAs($player)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($player)->get('/my')->assertStatus(403);
+        $this->actingAs($player)->get('/my/rallies/create')->assertStatus(403);
+        $this->actingAs($player)->post('/my/rallies', [
+            'title' => 'Unauthorized Rally',
+            'slug' => 'unauthorized-rally',
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertStatus(403);
+
+        // 1. Admin creates a Group
+        $this->actingAs($admin)
             ->post('/my/groups', [
                 'slug' => 'phpcon',
                 'name' => 'PHPカンファレンス運営',
@@ -73,8 +87,8 @@ class StampRallyFlowTest extends TestCase
 
         $group = Group::where('slug', 'phpcon')->firstOrFail();
 
-        // 2. Owner adds registered user by @handle
-        $this->actingAs($owner)
+        // 2. Admin adds registered user by @handle as group member
+        $this->actingAs($admin)
             ->post("/my/groups/{$group->slug}/members", [
                 'identifier' => '@staff_member',
                 'role' => 'member',
@@ -83,8 +97,18 @@ class StampRallyFlowTest extends TestCase
 
         $this->assertTrue($coStaff->canManageGroup($group));
 
-        // 3. Co-staff creates a RallySeries under the Group
+        // 3. Group member (non-admin) cannot create a new RallySeries
         $this->actingAs($coStaff)
+            ->post('/my/series', [
+                'group_id' => $group->id,
+                'title' => 'Unauthorized Series',
+                'slug' => 'unauthorized-series',
+                'visibility' => 'public',
+            ])
+            ->assertStatus(403);
+
+        // 4. Admin creates a RallySeries under the Group
+        $this->actingAs($admin)
             ->post('/my/series', [
                 'group_id' => $group->id,
                 'title' => 'PHPカンファレンススタンプラリー',
@@ -96,7 +120,9 @@ class StampRallyFlowTest extends TestCase
 
         $series = RallySeries::where('slug', 'phpcon-series')->firstOrFail();
 
-        // 4. Create a permanent StampRally (starts_at = null, ends_at = null)
+        // 5. Group member (and Admin) CAN access /my management page and create a StampRally belonging to that Series
+        $this->actingAs($coStaff)->get('/my')->assertStatus(200);
+
         $this->actingAs($coStaff)
             ->post('/my/rallies', [
                 'group_id' => $group->id,
@@ -112,7 +138,7 @@ class StampRallyFlowTest extends TestCase
 
         $rally = StampRally::where('slug', 'phpcon-2026')->firstOrFail();
 
-        // 5. Add a StampLocation (venue) with no period restriction
+        // 6. Add a StampLocation (venue) with no period restriction
         $this->actingAs($coStaff)
             ->post("/my/rallies/{$rally->slug}/locations", [
                 'name' => '大田区産業プラザPiO',
@@ -129,7 +155,7 @@ class StampRallyFlowTest extends TestCase
 
         $location = StampLocation::where('stamp_rally_id', $rally->id)->firstOrFail();
 
-        // 6. Player attempts check-in from too far away (Tokyo Station ~14km away) -> Fails
+        // 7. Player attempts check-in from too far away (Tokyo Station ~14km away) -> Fails
         $farResponse = $this->actingAs($player)
             ->postJson("/rallies/{$rally->slug}/locations/{$location->id}/checkin", [
                 'latitude' => 35.6812360,
@@ -142,7 +168,7 @@ class StampRallyFlowTest extends TestCase
                 'status' => 'too_far',
             ]);
 
-        // 7. Player checks in within 20 meters of the venue -> Succeeds and completes rally!
+        // 8. Player checks in within 20 meters of the venue -> Succeeds and completes rally!
         $nearResponse = $this->actingAs($player)
             ->postJson("/rallies/{$rally->slug}/locations/{$location->id}/checkin", [
                 'latitude' => 35.5589000,
@@ -156,12 +182,22 @@ class StampRallyFlowTest extends TestCase
                 'is_rally_completed' => true,
             ]);
 
-        // 8. Player can view the completion certificate
+        // 9. Player can view the completion certificate
         $this->actingAs($player)
             ->get("/rallies/{$rally->slug}/certificate")
             ->assertStatus(200)
             ->assertSee('コンプリート達成証')
             ->assertSee('大田区産業プラザPiO');
+
+        // 10. Admin promotes general user to Admin -> user can now create Series & Rallies
+        $this->actingAs($admin)
+            ->post('/my/admins', ['identifier' => '@rally_player'])
+            ->assertRedirect();
+
+        $this->assertTrue($player->fresh()->isAdmin());
+        $this->actingAs($player->fresh())
+            ->get('/my/series/create')
+            ->assertStatus(200);
     }
 
     public function test_location_period_window_is_enforced_when_specified(): void
@@ -171,6 +207,7 @@ class StampRallyFlowTest extends TestCase
             'name' => 'Creator',
             'email' => 'creator@example.com',
             'password' => 'password',
+            'is_admin' => true,
         ]);
 
         $rally = StampRally::create([

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'KOYAMA Tetsuji',
                 'email' => 'koyama@example.com',
                 'password' => Hash::make('password'),
+                'is_admin' => true,
             ]
         );
 
@@ -31,6 +32,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'PHPカンファレンス実行委員',
                 'email' => 'staff@example.com',
                 'password' => Hash::make('password'),
+                'is_admin' => false,
             ]
         );
 
@@ -40,6 +42,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'スタンプラリー参加者',
                 'email' => 'player@example.com',
                 'password' => Hash::make('password'),
+                'is_admin' => false,
             ]
         );
 

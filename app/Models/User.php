@@ -19,6 +19,7 @@ class User extends Authenticatable
         'password',
         'google_id',
         'avatar_url',
+        'is_admin',
     ];
 
     protected $hidden = [
@@ -31,7 +32,44 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function canAccessManagement(): bool
+    {
+        if ($this->is_admin) {
+            return true;
+        }
+
+        return $this->groups()->exists();
+    }
+
+    public function canCreateGroup(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function canCreateSeries(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function canCreateRally(): bool
+    {
+        if ($this->is_admin) {
+            return true;
+        }
+
+        $groupIds = $this->groups()->pluck('groups.id');
+
+        return $groupIds->isNotEmpty()
+            && RallySeries::whereIn('group_id', $groupIds)->exists();
     }
 
     public function groups(): BelongsToMany
@@ -63,6 +101,10 @@ class User extends Authenticatable
 
     public function canManageGroup(Group $group): bool
     {
+        if ($this->is_admin) {
+            return true;
+        }
+
         return $this->groups()
             ->where('groups.id', $group->id)
             ->exists();
@@ -70,6 +112,10 @@ class User extends Authenticatable
 
     public function isOwnerOfGroup(Group $group): bool
     {
+        if ($this->is_admin) {
+            return true;
+        }
+
         return $this->groups()
             ->where('groups.id', $group->id)
             ->wherePivot('role', 'owner')
@@ -78,6 +124,10 @@ class User extends Authenticatable
 
     public function canManageSeries(RallySeries $series): bool
     {
+        if ($this->is_admin) {
+            return true;
+        }
+
         if ($series->group_id) {
             return $this->groups()
                 ->where('groups.id', $series->group_id)
@@ -89,6 +139,10 @@ class User extends Authenticatable
 
     public function canManageRally(StampRally $rally): bool
     {
+        if ($this->is_admin) {
+            return true;
+        }
+
         if ($rally->group_id) {
             return $this->groups()
                 ->where('groups.id', $rally->group_id)

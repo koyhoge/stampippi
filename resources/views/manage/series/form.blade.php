@@ -63,7 +63,7 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <a href="{{ route('dashboard') }}" class="text-xs text-slate-500 hover:text-slate-800">ダッシュボードへ戻る</a>
+                <a href="{{ route('my.index') }}" class="text-xs text-slate-500 hover:text-slate-800">ラリー管理へ戻る</a>
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-6 py-2.5 rounded-xl">
                     {{ $isEdit ? '更新する' : 'シリーズを作成する' }}
                 </button>

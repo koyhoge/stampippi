@@ -11,13 +11,17 @@ use Illuminate\View\View;
 
 class GroupManageController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        abort_unless($request->user()->canCreateGroup(), 403, 'グループの新規作成は管理者のみ行えます。');
+
         return view('manage.groups.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canCreateGroup(), 403, 'グループの新規作成は管理者のみ行えます。');
+
         $validated = $request->validate([
             'slug' => ['required', 'string', 'max:48', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:groups,slug'],
             'name' => ['required', 'string', 'max:100'],

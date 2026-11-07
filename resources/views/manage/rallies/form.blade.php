@@ -30,9 +30,11 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（個人 / グループ）</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（グループ{{ auth()->user()->isAdmin() ? ' / 個人' : '' }}）</label>
                     <select name="group_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
-                        <option value="">👤 個人所有 ({{ '@' . auth()->user()->handle }})</option>
+                        @if (auth()->user()->isAdmin())
+                            <option value="">👤 個人所有 ({{ '@' . auth()->user()->handle }})</option>
+                        @endif
                         @foreach ($groups as $group)
                             <option value="{{ $group->id }}" @selected(old('group_id', $rally->group_id) == $group->id)>
                                 👥 グループ: {{ $group->name }} ({{ '@' . $group->slug }})
@@ -42,12 +44,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">所属ラリーシリーズ（任意・単発ラリーなら未選択）</label>
-                    <select name="rally_series_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
-                        <option value="">-- シリーズなし（単発スタンプラリー） --</option>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        所属ラリーシリーズ{{ auth()->user()->isAdmin() ? '（任意・単発ラリーなら未選択）' : '（必須）' }}
+                    </label>
+                    <select name="rally_series_id" @required(! auth()->user()->isAdmin()) class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
+                        @if (auth()->user()->isAdmin())
+                            <option value="">-- シリーズなし（単発スタンプラリー） --</option>
+                        @endif
                         @foreach ($seriesList as $s)
                             <option value="{{ $s->id }}" @selected(old('rally_series_id', $rally->rally_series_id) == $s->id)>
-                                📚 {{ $s->title }}
+                                📚 {{ $s->title }}{{ $s->group ? ' (' . $s->group->name . ')' : '' }}
                             </option>
                         @endforeach
                     </select>

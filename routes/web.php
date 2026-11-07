@@ -35,11 +35,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/rallies/{rally:slug}/locations/{location}/checkin', [PublicRallyController::class, 'checkin'])->name('rallies.checkin');
     Route::get('/rallies/{rally:slug}/certificate', [PublicRallyController::class, 'certificate'])->name('rallies.certificate');
 
-    // Dashboard
+    // Participant My Page (参加型)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Creator & Group management
+    // Creator, Group & Admin management (管理系)
     Route::prefix('my')->name('my.')->group(function () {
+        Route::get('/', [DashboardController::class, 'manage'])->name('index');
+        Route::post('/admins', [DashboardController::class, 'grantAdmin'])->name('admins.store');
+        Route::delete('/admins/{user}', [DashboardController::class, 'revokeAdmin'])->name('admins.destroy');
+
         Route::get('/groups/create', [GroupManageController::class, 'create'])->name('groups.create');
         Route::post('/groups', [GroupManageController::class, 'store'])->name('groups.store');
         Route::get('/groups/{group:slug}/edit', [GroupManageController::class, 'edit'])->name('groups.edit');
