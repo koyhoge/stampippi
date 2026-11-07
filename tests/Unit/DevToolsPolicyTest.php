@@ -7,9 +7,9 @@ use Tests\TestCase;
 
 class DevToolsPolicyTest extends TestCase
 {
-    public function test_dev_tools_enabled_in_local_environment(): void
+    public function test_dev_tools_enabled_in_local_or_develop_environment(): void
     {
-        $this->app['env'] = 'local';
+        $this->app['env'] = 'develop';
         config(['app.dev_tools' => true]);
 
         $this->assertTrue(User::isDevToolsEnabled());
