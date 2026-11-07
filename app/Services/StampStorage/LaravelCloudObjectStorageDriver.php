@@ -124,3 +124,4 @@ class LaravelCloudObjectStorageDriver implements StampImageStorageDriver
         Storage::disk($diskName)->delete(ltrim($storedValue, '/'));
     }
 }
+
