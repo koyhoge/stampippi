@@ -15,6 +15,7 @@ class RallyParticipation extends Model
         'stamp_rally_id',
         'joined_at',
         'completed_at',
+        'archived_at',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class RallyParticipation extends Model
         return [
             'joined_at' => 'datetime',
             'completed_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -34,5 +36,17 @@ class RallyParticipation extends Model
     {
         return $this->belongsTo(StampRally::class, 'stamp_rally_id');
     }
-}
 
+    public function isArchived(): bool
+    {
+        if ($this->archived_at !== null) {
+            return true;
+        }
+
+        if ($this->rally && $this->rally->ends_at && $this->rally->ends_at->isPast()) {
+            return true;
+        }
+
+        return false;
+    }
+}

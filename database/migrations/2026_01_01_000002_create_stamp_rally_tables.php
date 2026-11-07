@@ -60,6 +60,7 @@ return new class extends Migration
             $table->foreignId('stamp_rally_id')->constrained('stamp_rallies')->cascadeOnDelete();
             $table->timestamp('joined_at');
             $table->timestamp('completed_at')->nullable();
+            $table->timestamp('archived_at')->nullable();
             $table->timestamps();
 
             $table->unique(['user_id', 'stamp_rally_id']);

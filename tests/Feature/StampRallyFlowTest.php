@@ -65,8 +65,9 @@ class StampRallyFlowTest extends TestCase
             'is_admin' => false,
         ]);
 
-        // General user can view participant dashboard (/dashboard) but cannot access management (/my) or create rallies
+        // General user can view participant dashboard (/dashboard) and search active rallies, but cannot access management (/my) or create rallies
         $this->actingAs($player)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($player)->get('/dashboard?q=PHP')->assertStatus(200);
         $this->actingAs($player)->get('/my')->assertStatus(403);
         $this->actingAs($player)->get('/my/rallies/create')->assertStatus(403);
         $this->actingAs($player)->post('/my/rallies', [
@@ -188,6 +189,20 @@ class StampRallyFlowTest extends TestCase
             ->assertStatus(200)
             ->assertSee('コンプリート達成証')
             ->assertSee('大田区産業プラザPiO');
+
+        // 9b. Player can archive the permanent rally from "参加中のスタンプラリー" and still view it via ?archived=1
+        $this->actingAs($player)
+            ->post("/rallies/{$rally->slug}/archive")
+            ->assertRedirect();
+
+        $this->assertNotNull(
+            $player->participations()->where('stamp_rally_id', $rally->id)->first()->archived_at
+        );
+
+        $this->actingAs($player)
+            ->get('/dashboard?archived=1')
+            ->assertStatus(200)
+            ->assertSee('アーカイブ済');
 
         // 10. Admin promotes general user to Admin -> user can now create Series & Rallies
         $this->actingAs($admin)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\RallyParticipation;
 use App\Models\RallySeries;
 use App\Models\StampRally;
 use App\Models\User;
@@ -15,11 +16,22 @@ class DashboardController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+        $keyword = trim((string) $request->query('q', ''));
+        $showArchived = $request->boolean('archived');
+        $now = now();
 
-        $participations = $user->participations()
+        $allParticipations = $user->participations()
             ->with(['rally.locations', 'rally.series', 'rally.group'])
             ->latest('joined_at')
             ->get();
+
+        $archivedCount = $allParticipations->filter(fn (RallyParticipation $p) => $p->isArchived())->count();
+        $allParticipationsCount = $allParticipations->count();
+        $activeParticipationsCount = $allParticipationsCount - $archivedCount;
+
+        $participations = $showArchived
+            ? $allParticipations
+            : $allParticipations->reject(fn (RallyParticipation $p) => $p->isArchived())->values();
 
         $stampsByRally = $user->stamps()
             ->with('location')
@@ -27,18 +39,65 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('stamp_rally_id');
 
-        $publicRallies = StampRally::with(['group', 'series', 'locations'])
+        $publicQuery = StampRally::with(['group', 'series'])
+            ->withCount('locations')
             ->where('visibility', 'public')
+            ->where(function ($q) use ($now) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
+            });
+
+        if ($keyword !== '') {
+            $like = '%' . $keyword . '%';
+            $publicQuery->where(function ($q) use ($like) {
+                $q->where('title', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('slug', 'like', $like)
+                    ->orWhereHas('series', fn ($sq) => $sq->where('title', 'like', $like))
+                    ->orWhereHas('group', fn ($gq) => $gq->where('name', 'like', $like))
+                    ->orWhereHas('locations', fn ($lq) => $lq->where('name', 'like', $like));
+            });
+        }
+
+        $totalPublicActiveCount = (clone $publicQuery)->count();
+
+        $publicRallies = $publicQuery
             ->orderByDesc('starts_at')
             ->orderByDesc('id')
+            ->limit(6)
             ->get();
 
         return view('dashboard.index', compact(
             'user',
             'participations',
+            'allParticipationsCount',
+            'activeParticipationsCount',
+            'archivedCount',
+            'showArchived',
             'stampsByRally',
-            'publicRallies'
+            'publicRallies',
+            'totalPublicActiveCount',
+            'keyword'
         ));
+    }
+
+    public function toggleArchive(Request $request, StampRally $rally): RedirectResponse
+    {
+        $participation = RallyParticipation::where('user_id', $request->user()->id)
+            ->where('stamp_rally_id', $rally->id)
+            ->firstOrFail();
+
+        if ($participation->archived_at) {
+            $participation->update(['archived_at' => null]);
+
+            return back()->with('status', "「{$rally->title}」のアーカイブを解除し、参加中一覧に戻しました。");
+        }
+
+        $participation->update(['archived_at' => now()]);
+
+        return back()->with('status', "「{$rally->title}」をアーカイブしました。「アーカイブ済も含めてすべて表示」からいつでも確認・解除できます。");
     }
 
     public function manage(Request $request): View

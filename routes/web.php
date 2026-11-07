@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
 
     // Player actions (login required)
     Route::post('/rallies/{rally:slug}/join', [PublicRallyController::class, 'joinRally'])->name('rallies.join');
+    Route::post('/rallies/{rally:slug}/archive', [DashboardController::class, 'toggleArchive'])->name('rallies.archive');
     Route::post('/rallies/{rally:slug}/locations/{location}/checkin', [PublicRallyController::class, 'checkin'])->name('rallies.checkin');
     Route::get('/rallies/{rally:slug}/certificate', [PublicRallyController::class, 'certificate'])->name('rallies.certificate');
 
