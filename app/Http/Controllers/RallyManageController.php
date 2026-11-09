@@ -193,6 +193,11 @@ class RallyManageController extends Controller
             ? $series->group_id
             : (($validated['group_id'] ?? null) ?: $series?->group_id);
 
+        // Pattern B: Only the creator (or admin) can transfer ownership between personal and groups
+        if ((int) ($resolvedGroupId ?? 0) !== (int) ($rally->group_id ?? 0)) {
+            abort_unless($user->canTransferRallyOwnership($rally), 403, 'スタンプラリーの所有オーナー（グループ / 個人）の変更は作成者本人のみ可能です。');
+        }
+
         $rally->update([
             'group_id' => $resolvedGroupId,
             'rally_series_id' => ($validated['rally_series_id'] ?? null) ?: null,

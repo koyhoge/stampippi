@@ -571,4 +571,121 @@ class StampRallyFlowTest extends TestCase
                 'status' => 'location_out_of_period',
             ]);
     }
+
+    public function test_rally_ownership_transfer_between_individual_and_group_pattern_b(): void
+    {
+        $alice = User::create([
+            'handle' => 'alice',
+            'name' => 'Alice Creator',
+            'email' => 'alice@example.com',
+            'password' => 'password',
+        ]);
+
+        $bob = User::create([
+            'handle' => 'bob',
+            'name' => 'Bob Member',
+            'email' => 'bob@example.com',
+            'password' => 'password',
+        ]);
+
+        $admin = User::create([
+            'handle' => 'superadmin',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.com',
+            'password' => 'password',
+        ]);
+        $admin->forceFill(['is_admin' => true])->save();
+
+        $team = Group::create([
+            'slug' => 'team-alpha',
+            'name' => 'Team Alpha',
+            'description' => 'Alpha team',
+        ]);
+        $team->members()->attach([$alice->id, $bob->id]);
+
+        // 1. Alice creates an individual rally (group_id = null)
+        $this->actingAs($alice)->post('/my/rallies', [
+            'title' => 'Alice Solo Rally',
+            'slug' => 'alice-solo-rally',
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect();
+
+        $rally = StampRally::where('slug', 'alice-solo-rally')->firstOrFail();
+        $this->assertNull($rally->group_id);
+        $this->assertEquals($alice->id, $rally->creator_id);
+
+        // Bob cannot manage Alice's solo rally
+        $this->actingAs($bob)->get(route('my.rallies.edit', $rally))->assertStatus(403);
+        $this->actingAs($bob)->put(route('my.rallies.update', $rally), [
+            'title' => 'Bob Trying To Edit',
+            'slug' => $rally->slug,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertStatus(403);
+
+        // 2. Alice transfers ownership from Individual to Team Alpha
+        $this->actingAs($alice)->put(route('my.rallies.update', $rally), [
+            'title' => 'Alice Solo Rally -> Team Alpha',
+            'slug' => $rally->slug,
+            'group_id' => $team->id,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect();
+
+        $rally->refresh();
+        $this->assertEquals($team->id, $rally->group_id);
+
+        // 3. Now Bob (team member) can access and update basic fields of the rally
+        $this->actingAs($bob)->get(route('my.rallies.edit', $rally))->assertStatus(200);
+        $this->actingAs($bob)->put(route('my.rallies.update', $rally), [
+            'title' => 'Team Alpha Rally Renamed By Bob',
+            'slug' => $rally->slug,
+            'group_id' => $team->id, // keeping same group
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect();
+
+        $rally->refresh();
+        $this->assertEquals('Team Alpha Rally Renamed By Bob', $rally->title);
+
+        // 4. Pattern B: Bob (non-creator member) CANNOT hijack the rally to make it individual or change group
+        $this->actingAs($bob)->put(route('my.rallies.update', $rally), [
+            'title' => 'Bob Hijack Attempt',
+            'slug' => $rally->slug,
+            'group_id' => null, // Trying to make it individual
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertStatus(403);
+
+        $rally->refresh();
+        $this->assertEquals($team->id, $rally->group_id);
+
+        // 5. Alice (creator) CAN transfer the rally back from group to individual
+        $this->actingAs($alice)->put(route('my.rallies.update', $rally), [
+            'title' => 'Alice Reclaimed Solo Rally',
+            'slug' => $rally->slug,
+            'group_id' => null,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect();
+
+        $rally->refresh();
+        $this->assertNull($rally->group_id);
+
+        // 6. Once reverted to individual, Bob can no longer manage it
+        $this->actingAs($bob)->get(route('my.rallies.edit', $rally))->assertStatus(403);
+
+        // 7. Admin can also transfer ownership
+        $this->actingAs($admin)->put(route('my.rallies.update', $rally), [
+            'title' => 'Admin Transferred to Team',
+            'slug' => $rally->slug,
+            'group_id' => $team->id,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+        ])->assertRedirect();
+
+        $rally->refresh();
+        $this->assertEquals($team->id, $rally->group_id);
+    }
 }

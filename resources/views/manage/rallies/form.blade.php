@@ -51,24 +51,41 @@
                 @method('PUT')
             @endif
 
+            @php
+                $canTransfer = ! $isEdit || auth()->user()->canTransferRallyOwnership($rally);
+            @endphp
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">所有オーナー（グループ / 個人）</label>
-                    <select name="group_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
-                        <option value="">👤 個人所有 ({{ '@' . auth()->user()->handle }})</option>
-                        @foreach ($groups as $group)
-                            <option value="{{ $group->id }}" @selected(old('group_id', $rally->group_id) == $group->id)>
-                                👥 グループ: {{ $group->name }} ({{ '@' . $group->slug }})
-                            </option>
-                        @endforeach
-                    </select>
+                    @if ($canTransfer)
+                        <select name="group_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
+                            <option value="">👤 個人所有 ({{ '@' . ($rally->creator?->handle ?? auth()->user()->handle) }})</option>
+                            @foreach ($groups as $group)
+                                <option value="{{ $group->id }}" @selected(old('group_id', $rally->group_id) == $group->id)>
+                                    👥 グループ: {{ $group->name }} ({{ '@' . $group->slug }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            個人所有とあなたの所属グループ間で所有権限を移管できます。
+                        </p>
+                    @else
+                        <input type="hidden" name="group_id" value="{{ $rally->group_id }}">
+                        <div class="w-full rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2 text-sm text-slate-700 flex items-center justify-between">
+                            <span>👥 グループ: {{ $rally->group?->name ?? '所属グループ' }}</span>
+                            <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-semibold">変更不可</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            ※ 所有オーナーの変更は作成者本人（{{ '@' . ($rally->creator?->handle ?? '作成者') }}）のみ可能です。
+                        </p>
+                    @endif
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">
                         所属ラリーシリーズ（任意・単発ラリーなら未選択）
                     </label>
-                    <select name="rally_series_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
+                    <select name="rally_series_id" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500">
                         <option value="">-- シリーズなし（単発スタンプラリー） --</option>
                         @foreach ($seriesList as $s)
                             <option value="{{ $s->id }}" @selected(old('rally_series_id', $rally->rally_series_id) == $s->id)>

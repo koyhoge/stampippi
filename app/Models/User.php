@@ -251,4 +251,13 @@ class User extends Authenticatable
 
         return (int) $rally->creator_id === (int) $this->id;
     }
+
+    public function canTransferRallyOwnership(StampRally $rally): bool
+    {
+        if ($this->is_admin) {
+            return true;
+        }
+
+        return (int) $rally->creator_id === (int) $this->id;
+    }
 }
