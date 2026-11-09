@@ -20,7 +20,22 @@ class User extends Authenticatable
         'google_id',
         'github_id',
         'avatar_url',
+        'custom_avatar_path',
     ];
+
+    public function avatarUrl(): ?string
+    {
+        if ($this->custom_avatar_path) {
+            return app(\App\Services\AvatarStorageManager::class)->url($this->custom_avatar_path);
+        }
+
+        return $this->avatar_url;
+    }
+
+    public function hasCustomAvatar(): bool
+    {
+        return ! empty($this->custom_avatar_path);
+    }
 
     public static function isDevToolsEnabled(): bool
     {

@@ -39,7 +39,14 @@
 
             <div class="flex items-center gap-2 sm:gap-3">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3 py-1.5 rounded-full transition">
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 sm:px-3 py-1 rounded-full transition">
+                        @if (auth()->user()->avatarUrl())
+                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="w-6 h-6 rounded-full object-cover border border-slate-300 shrink-0">
+                        @else
+                            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                {{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                            </span>
+                        @endif
                         <span class="font-bold text-indigo-600">{{ '@' . auth()->user()->handle }}</span>
                         <span class="hidden md:inline text-slate-500">({{ auth()->user()->name }})</span>
                     </a>
@@ -115,7 +122,11 @@
                 </a>
             @endif
             <a href="{{ route('profile.edit') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('profile.*') ? 'text-indigo-600' : 'text-slate-600' }}">
-                <span class="text-base leading-none">👤</span>
+                @if (auth()->user()->avatarUrl())
+                    <img src="{{ auth()->user()->avatarUrl() }}" alt="" class="w-5 h-5 rounded-full object-cover">
+                @else
+                    <span class="text-base leading-none">👤</span>
+                @endif
                 <span class="mt-0.5">プロフィール</span>
             </a>
         @else

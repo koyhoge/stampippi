@@ -12,9 +12,47 @@
             </p>
         </div>
 
-        <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
             @method('PUT')
+
+            <!-- User Avatar Section -->
+            <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5 space-y-4">
+                <label class="block text-xs font-bold text-slate-700">プロフィールアイコン</label>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="shrink-0">
+                        @if ($user->avatarUrl())
+                            <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-20 h-20 rounded-full object-cover border-2 border-indigo-200 shadow-sm bg-white">
+                        @else
+                            <div class="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-sm">
+                                {{ strtoupper(mb_substr($user->name, 0, 1)) }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif"
+                               class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                        <p class="text-[11px] text-slate-500">
+                            JPEG, PNG, WebP, GIF形式（最大 2MB）。アップロードすると独自アイコンとして上書き保存されます。
+                        </p>
+                        @if ($user->hasCustomAvatar())
+                            <div class="pt-1 flex items-center gap-2">
+                                <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">独自アイコン設定中</span>
+                                @if ($user->avatar_url)
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-rose-600 font-semibold cursor-pointer hover:underline">
+                                        <input type="checkbox" name="remove_avatar" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                                        <span>削除して連携元 (OAuth) のアイコンに戻す</span>
+                                    </label>
+                                @endif
+                            </div>
+                        @elseif ($user->avatar_url)
+                            <div class="pt-0.5">
+                                <span class="text-[11px] font-medium text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded">連携サービス (OAuth) のアイコンを使用中</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">ユーザーID (@handle) ※半角英数・ハイフン・アンダースコア</label>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AvatarStorageManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -201,7 +202,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(Request $request, AvatarStorageManager $avatarStorage): RedirectResponse
     {
         $user = $request->user();
 
@@ -214,14 +215,31 @@ class AuthController extends Controller
                 Rule::unique('users', 'handle')->ignore($user->id),
             ],
             'name' => ['required', 'string', 'max:80'],
+            'avatar' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ]);
+
+        $customAvatarPath = $user->custom_avatar_path;
+
+        if ($request->hasFile('avatar')) {
+            if ($user->custom_avatar_path) {
+                $avatarStorage->delete($user->custom_avatar_path);
+            }
+            $customAvatarPath = $avatarStorage->store($request->file('avatar'));
+        } elseif ($request->boolean('remove_avatar')) {
+            if ($user->custom_avatar_path) {
+                $avatarStorage->delete($user->custom_avatar_path);
+            }
+            $customAvatarPath = null;
+        }
 
         $user->update([
             'handle' => strtolower($validated['handle']),
             'name' => $validated['name'],
+            'custom_avatar_path' => $customAvatarPath,
         ]);
 
-        return redirect()->route('profile.edit')->with('status', 'プロフィール（@handle・表示名）を更新しました。');
+        return redirect()->route('profile.edit')->with('status', 'プロフィールを更新しました。');
     }
 
     public function logout(Request $request): RedirectResponse

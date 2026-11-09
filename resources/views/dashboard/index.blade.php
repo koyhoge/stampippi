@@ -6,12 +6,23 @@
 <div class="space-y-8">
     <!-- Participant Header -->
     <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="space-y-1">
-            <div class="text-xs font-bold text-indigo-600 uppercase tracking-wider">MY STAMP BOOK</div>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">
-                {{ $user->name }} <span class="text-sm sm:text-base font-semibold text-indigo-600">({{ '@' . $user->handle }})</span>
-            </h1>
-            <p class="text-xs text-slate-500">参加中のスタンプラリーと獲得したスタンプの記録を確認できます。</p>
+        <div class="flex items-center gap-4">
+            <div class="shrink-0">
+                @if ($user->avatarUrl())
+                    <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="w-12 sm:w-14 h-12 sm:h-14 rounded-full object-cover border-2 border-indigo-100 shadow-sm">
+                @else
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-sm">
+                        {{ strtoupper(mb_substr($user->name, 0, 1)) }}
+                    </div>
+                @endif
+            </div>
+            <div class="space-y-1">
+                <div class="text-xs font-bold text-indigo-600 uppercase tracking-wider">MY STAMP BOOK</div>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">
+                    {{ $user->name }} <span class="text-sm sm:text-base font-semibold text-indigo-600">({{ '@' . $user->handle }})</span>
+                </h1>
+                <p class="text-xs text-slate-500">参加中のスタンプラリーと獲得したスタンプの記録を確認できます。</p>
+            </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
