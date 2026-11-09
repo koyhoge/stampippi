@@ -26,10 +26,19 @@ class User extends Authenticatable
     public function avatarUrl(): ?string
     {
         if ($this->custom_avatar_path) {
-            return app(\App\Services\AvatarStorageManager::class)->url($this->custom_avatar_path);
+            $customUrl = app(\App\Services\AvatarStorageManager::class)->url($this->custom_avatar_path);
+            if ($customUrl && (str_starts_with($customUrl, 'https://') || str_starts_with($customUrl, 'http://') || str_starts_with($customUrl, '/'))) {
+                return $customUrl;
+            }
+
+            return null;
         }
 
-        return $this->avatar_url;
+        if ($this->avatar_url && (str_starts_with($this->avatar_url, 'https://') || str_starts_with($this->avatar_url, 'http://'))) {
+            return $this->avatar_url;
+        }
+
+        return null;
     }
 
     public function hasCustomAvatar(): bool

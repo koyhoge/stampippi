@@ -88,3 +88,4 @@ class AvatarStorageManager
         $this->driver()->delete($storedValue);
     }
 }
+

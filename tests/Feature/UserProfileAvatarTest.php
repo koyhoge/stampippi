@@ -154,4 +154,38 @@ class UserProfileAvatarTest extends TestCase
         $this->assertEquals('avatars/my-uploaded-icon.png', $user->custom_avatar_path);
         $this->assertStringContainsString('my-uploaded-icon.png', $user->avatarUrl());
     }
+
+    public function test_avatar_url_scheme_validation_blocks_unsafe_schemes(): void
+    {
+        $unsafeUser = User::create([
+            'handle' => 'unsafe_user',
+            'name' => 'Unsafe User',
+            'email' => 'unsafe@example.com',
+            'password' => 'password',
+            'avatar_url' => 'javascript:alert(1)',
+        ]);
+
+        $this->assertNull($unsafeUser->avatarUrl());
+
+        $dataUriUser = User::create([
+            'handle' => 'data_user',
+            'name' => 'Data URI User',
+            'email' => 'data@example.com',
+            'password' => 'password',
+            'avatar_url' => 'data:text/html,<script>alert(1)</script>',
+        ]);
+
+        $this->assertNull($dataUriUser->avatarUrl());
+
+        $safeUser = User::create([
+            'handle' => 'safe_user',
+            'name' => 'Safe User',
+            'email' => 'safe@example.com',
+            'password' => 'password',
+            'avatar_url' => 'https://secure.gravatar.com/avatar/12345',
+        ]);
+
+        $this->assertEquals('https://secure.gravatar.com/avatar/12345', $safeUser->avatarUrl());
+    }
 }
+
