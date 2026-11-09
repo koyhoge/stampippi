@@ -246,8 +246,8 @@ class RallyManageController extends Controller
         $rally->locations()->create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
+            'latitude' => round((float) $validated['latitude'], 6),
+            'longitude' => round((float) $validated['longitude'], 6),
             'radius_meters' => $validated['radius_meters'],
             'available_from' => ($validated['available_from'] ?? null) ?: null,
             'available_until' => ($validated['available_until'] ?? null) ?: null,
@@ -312,8 +312,8 @@ class RallyManageController extends Controller
         $location->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
+            'latitude' => round((float) $validated['latitude'], 6),
+            'longitude' => round((float) $validated['longitude'], 6),
             'radius_meters' => $validated['radius_meters'],
             'available_from' => ($validated['available_from'] ?? null) ?: null,
             'available_until' => ($validated['available_until'] ?? null) ?: null,

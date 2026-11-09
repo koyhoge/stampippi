@@ -88,18 +88,29 @@ class StampRallyFlowTest extends TestCase
         $this->assertNull($playerRally->group_id);
         $this->assertNull($playerRally->rally_series_id);
 
-        // General user can add locations to their rally
+        // General user can add locations to their rally (supports 15-decimal high precision coordinates and rounds to 6 decimals)
         $this->actingAs($player)->post("/my/rallies/{$playerRally->slug}/locations", [
             'name' => 'Solo Venue 1',
-            'latitude' => 35.6812,
-            'longitude' => 139.7671,
+            'latitude' => 35.681234567890123,
+            'longitude' => 139.767123456789012,
             'radius_meters' => 50,
             'stamp_icon_value' => 'coffee',
             'stamp_color' => '#f97316',
         ])->assertRedirect();
+        $soloLocation = StampLocation::where('stamp_rally_id', $playerRally->id)->firstOrFail();
+        $this->actingAs($player)->put(route('my.rallies.locations.update', [$playerRally, $soloLocation]), [
+            'name' => 'Solo Venue 1 Updated',
+            'latitude' => 35.689999123456789,
+            'longitude' => 139.755555987654321,
+            'radius_meters' => 60,
+            'stamp_icon_value' => 'coffee',
+            'stamp_color' => '#f97316',
+        ])->assertRedirect();
         $this->assertDatabaseHas('stamp_locations', [
-            'stamp_rally_id' => $playerRally->id,
-            'name' => 'Solo Venue 1',
+            'id' => $soloLocation->id,
+            'name' => 'Solo Venue 1 Updated',
+            'latitude' => 35.689999,
+            'longitude' => 139.755556,
         ]);
 
         // Another general user cannot edit or modify player's solo rally
