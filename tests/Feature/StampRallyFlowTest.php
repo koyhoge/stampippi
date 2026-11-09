@@ -447,12 +447,14 @@ class StampRallyFlowTest extends TestCase
             ->get('/my/series/create')
             ->assertStatus(200);
 
-        // 11. Disabling config('app.dev_tools') turns off dev login and GPS simulator
+        // 11. Disabling config('app.dev_tools') turns off dev login, GPS simulator and GPS status box
         config(['app.dev_tools' => false]);
         $this->actingAs($player)
             ->get("/rallies/{$rally->slug}")
             ->assertStatus(200)
-            ->assertDontSee('開発用 GPSシミュレーター');
+            ->assertDontSee('開発用 GPSステータス')
+            ->assertDontSee('開発用 GPSシミュレーター')
+            ->assertDontSee('実機スマホ・ブラウザGPSモード');
 
         auth()->logout();
         $this->post('/dev-login', ['user_id' => $player->id])->assertStatus(403);

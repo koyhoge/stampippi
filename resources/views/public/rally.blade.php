@@ -263,9 +263,13 @@
         @endif
     </div>
 
+    @php
+        $devToolsEnabled = \App\Models\User::isDevToolsEnabled();
+    @endphp
+
     <!-- Map & GPS Status Section -->
-    <div id="map-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 scroll-mt-20">
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+    <div id="map-section" class="{{ $devToolsEnabled ? 'grid grid-cols-1 lg:grid-cols-3 gap-6' : 'space-y-6' }} scroll-mt-20">
+        <div class="{{ $devToolsEnabled ? 'lg:col-span-2' : 'w-full' }} bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
             <div class="flex items-center justify-between">
                 <h2 class="text-base font-bold text-slate-900">🗺️ ベニューマップ</h2>
                 <button type="button" id="btn-current-location" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-lg">
@@ -273,22 +277,25 @@
                 </button>
             </div>
             <div id="rally-map" class="w-full h-72 sm:h-96 rounded-xl border border-slate-200 z-10"></div>
-            <p class="text-[11px] text-slate-500">
-                ※円は各ベニューのスタンプ判定半径です。円の内側でチェックインするとスタンプを獲得できます。
-            </p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-1">
+                <p>※円は各ベニューのスタンプ判定半径です。円の内側でチェックインするとスタンプを獲得できます。</p>
+                @if (! $devToolsEnabled)
+                    <p class="text-slate-400">※スマートフォンのブラウザで位置情報へのアクセスを「許可」してご利用ください。</p>
+                @endif
+            </div>
         </div>
 
-        <!-- GPS Status & Collapsible Local Simulator -->
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-4">
-            <div class="space-y-3">
-                <h3 class="text-sm sm:text-base font-bold text-slate-900">📡 GPS現在地ステータス</h3>
-                <div id="gps-status-box" class="rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-xs space-y-1">
-                    <div class="font-semibold text-slate-700" id="gps-mode-label">実機スマホ・ブラウザGPSモード</div>
-                    <div class="text-slate-500" id="gps-coords-display">スタンプ押印時にスマートフォンの位置情報を取得します。</div>
-                </div>
+        @if ($devToolsEnabled)
+            <!-- GPS Status & Collapsible Local Simulator (Local / Dev only) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-4">
+                <div class="space-y-3">
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900">📡 開発用 GPSステータス</h3>
+                    <div id="gps-status-box" class="rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-xs space-y-1">
+                        <div class="font-semibold text-slate-700" id="gps-mode-label">実機スマホ・ブラウザGPSモード</div>
+                        <div class="text-slate-500" id="gps-coords-display">スタンプ押印時にスマートフォンの位置情報を取得します。</div>
+                    </div>
 
-                @if (\App\Models\User::isDevToolsEnabled())
-                    <details class="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs group">
+                    <details class="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs group" open>
                         <summary class="font-extrabold text-amber-900 cursor-pointer flex items-center justify-between list-none">
                             <span>🛠️ 開発用 GPSシミュレーター (タップで開閉)</span>
                             <span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold">LOCAL</span>
@@ -323,13 +330,13 @@
                             </div>
                         </div>
                     </details>
-                @endif
-            </div>
+                </div>
 
-            <div class="text-xs text-slate-400 border-t border-slate-100 pt-3">
-                スマートフォンのブラウザで位置情報へのアクセスを「許可」してご利用ください。
+                <div class="text-xs text-slate-400 border-t border-slate-100 pt-3">
+                    開発環境ツールが有効です。マップクリックでも擬似座標をセットできます。
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 </div>
 @endsection
@@ -433,14 +440,17 @@
         setTimeout(() => map.setView([lat, lng], 16), 200);
     }
 
+    @if (\App\Models\User::isDevToolsEnabled())
     function setSimulatedLocation(lat, lng, name) {
         const latInput = document.getElementById('sim-lat');
         const lngInput = document.getElementById('sim-lng');
         if (latInput && lngInput) {
             latInput.value = lat;
             lngInput.value = lng;
-            document.getElementById('gps-mode-label').textContent = '🛠️ シミュレーター座標を使用中 (' + name + ')';
-            document.getElementById('gps-coords-display').textContent = `Lat: ${lat}, Lng: ${lng}`;
+            const modeLabel = document.getElementById('gps-mode-label');
+            if (modeLabel) modeLabel.textContent = '🛠️ シミュレーター座標を使用中 (' + name + ')';
+            const coordsDisplay = document.getElementById('gps-coords-display');
+            if (coordsDisplay) coordsDisplay.textContent = `Lat: ${lat}, Lng: ${lng}`;
             updateUserPin(lat, lng, `📍 擬似現在地 (${name})`);
         }
     }
@@ -451,12 +461,13 @@
         if (latInput && lngInput) {
             latInput.value = '';
             lngInput.value = '';
-            document.getElementById('gps-mode-label').textContent = '実機スマホ・ブラウザGPSモード';
-            document.getElementById('gps-coords-display').textContent = 'スタンプ押印時にスマートフォンの位置情報を取得します。';
+            const modeLabel = document.getElementById('gps-mode-label');
+            if (modeLabel) modeLabel.textContent = '実機スマホ・ブラウザGPSモード';
+            const coordsDisplay = document.getElementById('gps-coords-display');
+            if (coordsDisplay) coordsDisplay.textContent = 'スタンプ押印時にスマートフォンの位置情報を取得します。';
         }
     }
 
-    @if (\App\Models\User::isDevToolsEnabled())
     map.on('click', function(e) {
         const lat = Number(e.latlng.lat.toFixed(7));
         const lng = Number(e.latlng.lng.toFixed(7));
