@@ -112,13 +112,21 @@
                 <textarea name="description" rows="2" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">{{ old('description', $rally->description) }}</textarea>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">公開ステータス</label>
                     <select name="visibility" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
                         <option value="public" @selected(old('visibility', $rally->visibility) === 'public')>全体公開 (public)</option>
                         <option value="unlisted" @selected(old('visibility', $rally->visibility) === 'unlisted')>限定公開 (unlisted)</option>
                         <option value="draft" @selected(old('visibility', $rally->visibility) === 'draft')>下書き (draft)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">参加者の表示設定</label>
+                    <select name="participant_display_mode" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm bg-white">
+                        <option value="icons" @selected(old('participant_display_mode', $rally->participant_display_mode ?? 'icons') === 'icons')>👥 アイコンと人数を表示</option>
+                        <option value="count_only" @selected(old('participant_display_mode', $rally->participant_display_mode ?? 'icons') === 'count_only')>🔢 人数のみ表示</option>
                     </select>
                 </div>
 

@@ -8,6 +8,7 @@ use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
 use App\Models\User;
+use App\Models\UserStamp;
 use App\Services\StampCheckinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -119,11 +120,63 @@ class PublicRallyController extends Controller
             ];
         })->values();
 
+        $totalParticipantsCount = $rally->participations()->count();
+        $recentParticipants = collect();
+        if ($rally->showsParticipantIcons()) {
+            $recentParticipants = $rally->participations()
+                ->with('user')
+                ->latest('joined_at')
+                ->limit(30)
+                ->get()
+                ->pluck('user')
+                ->filter()
+                ->unique('id')
+                ->values();
+        }
+
+        $locationStampsGrouped = UserStamp::where('stamp_rally_id', $rally->id)
+            ->with('user')
+            ->latest('stamped_at')
+            ->get()
+            ->groupBy('stamp_location_id');
+
         return view('public.rally', compact(
             'rally',
             'participation',
             'userStampsByLocation',
-            'mapLocations'
+            'mapLocations',
+            'totalParticipantsCount',
+            'recentParticipants',
+            'locationStampsGrouped'
+        ));
+    }
+
+    public function showParticipant(Request $request, StampRally $rally, User $user): View
+    {
+        if ($rally->visibility === 'draft' && (! $request->user() || ! $request->user()->canManageRally($rally))) {
+            abort(404);
+        }
+
+        $participation = RallyParticipation::where('user_id', $user->id)
+            ->where('stamp_rally_id', $rally->id)
+            ->firstOrFail();
+
+        $rally->load(['group', 'series', 'locations']);
+
+        $userStamps = $user->stamps()
+            ->where('stamp_rally_id', $rally->id)
+            ->with('location')
+            ->orderBy('stamped_at')
+            ->get();
+
+        $userStampsByLocation = $userStamps->keyBy('stamp_location_id');
+
+        return view('public.participant', compact(
+            'rally',
+            'user',
+            'participation',
+            'userStamps',
+            'userStampsByLocation'
         ));
     }
 

@@ -39,6 +39,7 @@ class RallyManageController extends Controller
 
         $rally = new StampRally([
             'visibility' => 'public',
+            'participant_display_mode' => 'icons',
             'completion_condition' => 'all',
             'rally_series_id' => $defaultSeriesId,
             'group_id' => $defaultGroupId,
@@ -72,6 +73,7 @@ class RallyManageController extends Controller
             'rally_series_id' => $seriesRule,
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
+            'participant_display_mode' => ['nullable', Rule::in(['icons', 'count_only'])],
             'completion_condition' => ['required', Rule::in(['all', 'count'])],
             'required_locations_count' => ['nullable', 'integer', 'min:1'],
             'starts_at' => ['nullable', 'date'],
@@ -96,6 +98,7 @@ class RallyManageController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'visibility' => $validated['visibility'],
+            'participant_display_mode' => $validated['participant_display_mode'] ?? 'icons',
             'completion_condition' => $validated['completion_condition'],
             'required_locations_count' => $validated['completion_condition'] === 'count'
                 ? ($validated['required_locations_count'] ?? 1)
@@ -177,6 +180,7 @@ class RallyManageController extends Controller
             'rally_series_id' => $seriesRule,
             'description' => ['nullable', 'string', 'max:3000'],
             'visibility' => ['required', Rule::in(['draft', 'public', 'unlisted'])],
+            'participant_display_mode' => ['nullable', Rule::in(['icons', 'count_only'])],
             'completion_condition' => ['required', Rule::in(['all', 'count'])],
             'required_locations_count' => ['nullable', 'integer', 'min:1'],
             'starts_at' => ['nullable', 'date'],
@@ -205,6 +209,7 @@ class RallyManageController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'visibility' => $validated['visibility'],
+            'participant_display_mode' => $validated['participant_display_mode'] ?? 'icons',
             'completion_condition' => $validated['completion_condition'],
             'required_locations_count' => $validated['completion_condition'] === 'count'
                 ? ($validated['required_locations_count'] ?? 1)

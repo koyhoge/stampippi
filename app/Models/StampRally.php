@@ -21,6 +21,7 @@ class StampRally extends Model
         'description',
         'cover_image_path',
         'visibility',
+        'participant_display_mode',
         'completion_condition',
         'required_locations_count',
         'starts_at',
@@ -73,6 +74,11 @@ class StampRally extends Model
     public function userStamps(): HasMany
     {
         return $this->hasMany(UserStamp::class, 'stamp_rally_id');
+    }
+
+    public function showsParticipantIcons(): bool
+    {
+        return ($this->participant_display_mode ?? 'icons') === 'icons';
     }
 
     public function isCurrentlyActive(?Carbon $at = null): bool

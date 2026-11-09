@@ -79,6 +79,37 @@
                 @endauth
             </div>
         </div>
+
+        <!-- Rally Participants Section -->
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>👥 参加者:</span>
+                    <span class="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-extrabold">{{ $totalParticipantsCount }}人</span>
+                </span>
+            </div>
+
+            @if ($rally->showsParticipantIcons() && $recentParticipants->isNotEmpty())
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    @foreach ($recentParticipants as $pUser)
+                        <a href="{{ route('rallies.participants.show', [$rally, $pUser]) }}"
+                           class="relative group transition transform hover:scale-110"
+                           title="{{ $pUser->name }} ({{ '@' . $pUser->handle }}) の参加状態を見る">
+                            @if ($pUser->avatarUrl())
+                                <img src="{{ $pUser->avatarUrl() }}" alt="{{ $pUser->name }}" class="w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm">
+                            @else
+                                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] border-2 border-white shadow-sm">
+                                    {{ strtoupper(mb_substr($pUser->name, 0, 1)) }}
+                                </div>
+                            @endif
+                        </a>
+                    @endforeach
+                    @if ($totalParticipantsCount > $recentParticipants->count())
+                        <span class="text-[11px] text-slate-400 font-semibold ml-1">他 {{ $totalParticipantsCount - $recentParticipants->count() }}人</span>
+                    @endif
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Smartphone Quick GPS Check-in Banner -->
@@ -160,6 +191,39 @@
                                     <p class="text-xs text-slate-600 leading-relaxed">{{ $location->description }}</p>
                                 @endif
                             </div>
+                        </div>
+
+                        <!-- Location Checkin Visitors / Icons -->
+                        @php
+                            $locStamps = $locationStampsGrouped->get($location->id, collect());
+                            $locStampsCount = $locStamps->count();
+                            $locRecentUsers = $locStamps->pluck('user')->filter()->unique('id')->take(8);
+                        @endphp
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                            <span class="font-semibold flex items-center gap-1 shrink-0">
+                                <span>📍</span>
+                                <span>{{ $locStampsCount }}人がチェックイン</span>
+                            </span>
+                            @if ($rally->showsParticipantIcons() && $locRecentUsers->isNotEmpty())
+                                <div class="flex items-center gap-1 flex-wrap justify-end">
+                                    @foreach ($locRecentUsers as $cUser)
+                                        <a href="{{ route('rallies.participants.show', [$rally, $cUser]) }}"
+                                           title="{{ $cUser->name }} ({{ '@' . $cUser->handle }}) の参加状態を見る"
+                                           class="relative group transition transform hover:scale-110">
+                                            @if ($cUser->avatarUrl())
+                                                <img src="{{ $cUser->avatarUrl() }}" alt="{{ $cUser->name }}" class="w-5 h-5 rounded-full object-cover border border-white shadow-xs">
+                                            @else
+                                                <div class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[8px] border border-white shadow-xs">
+                                                    {{ strtoupper(mb_substr($cUser->name, 0, 1)) }}
+                                                </div>
+                                            @endif
+                                        </a>
+                                    @endforeach
+                                    @if ($locStampsCount > $locRecentUsers->count())
+                                        <span class="text-[10px] text-slate-400 font-semibold ml-0.5">+{{ $locStampsCount - $locRecentUsers->count() }}</span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Touch-friendly Action Area -->
