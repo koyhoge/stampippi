@@ -20,9 +20,11 @@
             @auth
                 @if (auth()->user()->canManageSeries($series))
                     <div class="flex items-center gap-2">
-                        <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">
-                            ＋ このシリーズにラリーを追加
-                        </a>
+                        @if (auth()->user()->canCreateRally())
+                            <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">
+                                ＋ このシリーズにラリーを追加
+                            </a>
+                        @endif
                         <a href="{{ route('my.series.edit', $series) }}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg">
                             ⚙️ シリーズ編集
                         </a>

@@ -75,9 +75,11 @@
         <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
             <div class="flex items-center justify-between">
                 <h2 class="text-base font-bold text-slate-900">このシリーズに属するスタンプラリー ({{ $series->rallies->count() }}件)</h2>
-                <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl">
-                    ＋ このシリーズに新しいスタンプラリーを追加
-                </a>
+                @if (auth()->user()->canCreateRally())
+                    <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl">
+                        ＋ このシリーズに新しいスタンプラリーを追加
+                    </a>
+                @endif
             </div>
             @foreach ($series->rallies as $r)
                 <div class="flex items-center justify-between py-2 border-t border-slate-100 text-sm">

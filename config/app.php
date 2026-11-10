@@ -9,6 +9,9 @@ return [
         'trim',
         explode(',', (string) env('APP_INITIAL_ADMINS', env('APP_ADMINS', '')))
     ))),
+    'max_user_rallies' => env('APP_MAX_USER_RALLIES') !== null && env('APP_MAX_USER_RALLIES') !== ''
+        ? (int) env('APP_MAX_USER_RALLIES')
+        : null,
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => env('APP_TIMEZONE', 'Asia/Tokyo'),
     'locale' => env('APP_LOCALE', 'ja'),

@@ -17,7 +17,11 @@ class RallyManageController extends Controller
     public function create(Request $request): View
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
+        $max = $user->maxRalliesAllowed();
+        $limitMessage = $max !== null
+            ? "スタンプラリーの作成上限数（{$max}件）に達しているため、これ以上新規作成できません。"
+            : 'スタンプラリーの新規作成権限がありません。';
+        abort_unless($user->canCreateRally(), 403, $limitMessage);
 
         if ($user->isAdmin()) {
             $groups = Group::orderBy('name')->get();
@@ -58,7 +62,11 @@ class RallyManageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->canCreateRally(), 403, 'スタンプラリーの新規作成権限がありません。');
+        $max = $user->maxRalliesAllowed();
+        $limitMessage = $max !== null
+            ? "スタンプラリーの作成上限数（{$max}件）に達しているため、これ以上新規作成できません。"
+            : 'スタンプラリーの新規作成権限がありません。';
+        abort_unless($user->canCreateRally(), 403, $limitMessage);
 
         $groupIds = $user->isAdmin()
             ? Group::pluck('id')->all()

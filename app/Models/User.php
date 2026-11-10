@@ -185,9 +185,28 @@ class User extends Authenticatable
         return (bool) $this->is_admin;
     }
 
+    public function maxRalliesAllowed(): ?int
+    {
+        if ($this->isAdmin()) {
+            return null;
+        }
+
+        $limit = config('app.max_user_rallies');
+        if ($limit === null || $limit === '' || (int) $limit < 0) {
+            return null;
+        }
+
+        return (int) $limit;
+    }
+
     public function canCreateRally(): bool
     {
-        return true;
+        $max = $this->maxRalliesAllowed();
+        if ($max === null) {
+            return true;
+        }
+
+        return $this->createdRallies()->count() < $max;
     }
 
     public function groups(): BelongsToMany

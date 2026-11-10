@@ -53,6 +53,10 @@
                 <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
                     🗺️ ＋ スタンプラリー作成
                 </a>
+            @elseif ($user->maxRalliesAllowed() !== null)
+                <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-200" title="作成上限に達しています">
+                    <span>⚠️ 作成上限 ({{ $user->maxRalliesAllowed() }}件) 到達</span>
+                </span>
             @endif
         </div>
     </div>
@@ -66,6 +70,8 @@
             </div>
             @if ($user->canCreateRally())
                 <a href="{{ route('my.rallies.create') }}" class="text-xs font-bold text-indigo-600 hover:underline">＋ スタンプラリー作成</a>
+            @elseif ($user->maxRalliesAllowed() !== null)
+                <span class="text-xs font-medium text-slate-400">作成上限 ({{ $user->maxRalliesAllowed() }}件)</span>
             @endif
         </div>
 
@@ -123,9 +129,13 @@
                             <p class="text-xs text-slate-500 mt-1">含まれるラリー: {{ $series->rallies->count() }}件</p>
                         </div>
                         <div class="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
-                            <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs font-bold text-indigo-600 hover:underline">
-                                ＋ このシリーズにラリーを作成
-                            </a>
+                            @if ($user->canCreateRally())
+                                <a href="{{ route('my.rallies.create', ['series_id' => $series->id, 'group_id' => $series->group_id]) }}" class="text-xs font-bold text-indigo-600 hover:underline">
+                                    ＋ このシリーズにラリーを作成
+                                </a>
+                            @else
+                                <span class="text-xs text-slate-400">作成上限到達</span>
+                            @endif
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('series.show', $series) }}" class="text-xs text-slate-600 hover:underline px-2 py-1">表示</a>
                                 <a href="{{ route('my.series.edit', $series) }}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-1.5 rounded-lg">編集</a>
