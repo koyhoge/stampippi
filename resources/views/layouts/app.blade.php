@@ -97,7 +97,7 @@
 
     <footer class="bg-white border-t border-slate-200 mt-12 py-6">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-            <div>Stampippi — みんなでつくる・参加するGPSスタンプラリープラットフォーム</div>
+            <div><a href="https://github.com/koyhoge/stampippi" target="_blank" rel="noopener noreferrer" class="font-bold text-slate-700 hover:text-indigo-600 transition underline underline-offset-2">Stampippi</a> — みんなでつくる・参加するGPSスタンプラリープラットフォーム</div>
             <div class="flex items-center gap-4">
                 <a href="{{ route('home') }}" class="hover:text-slate-800">トップ</a>
                 @auth
