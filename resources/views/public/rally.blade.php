@@ -4,6 +4,62 @@
 
 @section('content')
 <div class="space-y-6 sm:space-y-8">
+    @if (session('checkin_celebration'))
+        @php
+            $cel = session('checkin_celebration');
+            $isComplete = !empty($cel['is_completed']);
+            $locName = $cel['location_name'] ?? 'ベニュー';
+            $rallyUrl = route('rallies.show', $rally);
+            if ($isComplete) {
+                $shareTitle = "🎉 スタンプラリー「{$rally->title}」をコンプリートしました！";
+                $shareText = "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー";
+                $shareUrl = route('rallies.certificate', $rally);
+            } else {
+                $shareTitle = "💮 「{$locName}」でスタンプを獲得！";
+                $shareText = "スタンプラリー「{$rally->title}」の「{$locName}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー";
+                $shareUrl = $rallyUrl;
+            }
+        @endphp
+        <div class="rounded-2xl p-5 sm:p-6 shadow-md border-2 {{ $isComplete ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-300' : 'bg-emerald-50 border-emerald-300 text-emerald-950' }} space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                    <div class="text-xs font-bold uppercase tracking-wider {{ $isComplete ? 'text-amber-100' : 'text-emerald-700' }}">
+                        {{ $isComplete ? '🏆 RALLY COMPLETED!' : '💮 STAMP ACQUIRED!' }}
+                    </div>
+                    <h2 class="text-lg sm:text-xl font-extrabold flex items-center gap-2">
+                        <span>{{ $isComplete ? '🎉 コンプリート達成おめでとうございます！' : '💮 スタンプを獲得しました！' }}</span>
+                    </h2>
+                    <p class="text-xs sm:text-sm {{ $isComplete ? 'text-amber-100' : 'text-emerald-800' }}">
+                        @if ($isComplete)
+                            「{{ $rally->title }}」のスタンプラリー条件を見事達成しました！達成の喜びをSNSでシェアしましょう！
+                        @else
+                            「{{ $locName }}」のチェックインが完了しました！SNSでシェアして参加をアピールしましょう。
+                        @endif
+                    </p>
+                </div>
+
+                @if ($isComplete)
+                    <a href="{{ route('rallies.certificate', $rally) }}"
+                       class="self-start sm:self-center shrink-0 bg-white text-amber-700 hover:bg-amber-50 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow transition">
+                        🏆 達成証を見る →
+                    </a>
+                @endif
+            </div>
+
+            <div class="pt-3 border-t {{ $isComplete ? 'border-amber-400/60' : 'border-emerald-200' }} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span class="text-xs font-bold {{ $isComplete ? 'text-amber-100' : 'text-emerald-800' }}">
+                    SNSでシェアする:
+                </span>
+                @include('partials.sns-share', [
+                    'title' => $shareTitle,
+                    'text' => $shareText,
+                    'url' => $shareUrl,
+                    'size' => 'md',
+                ])
+            </div>
+        </div>
+    @endif
+
     <!-- Rally Header -->
     <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-8 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -68,9 +124,17 @@
             <div class="shrink-0">
                 @auth
                     @if ($participation && $participation->completed_at)
-                        <a href="{{ route('rallies.certificate', $rally) }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-3 sm:py-2.5 rounded-xl shadow transition">
-                            🏆 コンプリート達成証を見る
-                        </a>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <a href="{{ route('rallies.certificate', $rally) }}" class="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow transition">
+                                🏆 達成証を見る
+                            </a>
+                            @include('partials.sns-share', [
+                                'title' => "🎉 「{$rally->title}」をコンプリート！",
+                                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー",
+                                'url' => route('rallies.certificate', $rally),
+                                'size' => 'sm',
+                            ])
+                        </div>
                     @endif
                 @else
                     <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold px-4 py-3 sm:py-2.5 rounded-xl shadow transition">
@@ -229,8 +293,19 @@
                         <!-- Touch-friendly Action Area -->
                         <div class="pt-2 border-t border-slate-100">
                             @if ($stamp)
-                                <div class="w-full text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2.5 rounded-xl">
-                                    💮 スタンプ獲得済み ({{ $stamp->stamped_at->format('Y/m/d H:i') }} / 中心から {{ $stamp->distance_meters }}m)
+                                <div class="space-y-2">
+                                    <div class="w-full text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl">
+                                        💮 スタンプ獲得済み ({{ $stamp->stamped_at->format('Y/m/d H:i') }})
+                                    </div>
+                                    <div class="flex items-center justify-between gap-1 text-[11px] text-slate-500 pt-0.5">
+                                        <span>獲得をシェア:</span>
+                                        @include('partials.sns-share', [
+                                            'title' => "「{$location->name}」でスタンプ獲得！",
+                                            'text' => "スタンプラリー「{$rally->title}」の「{$location->name}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー",
+                                            'url' => route('rallies.show', $rally),
+                                            'size' => 'xs',
+                                        ])
+                                    </div>
                                 </div>
                             @else
                                 @auth

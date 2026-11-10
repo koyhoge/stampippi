@@ -239,8 +239,21 @@ class PublicRallyController extends Controller
             return back()->withErrors(['checkin' => $result['message']]);
         }
 
-        return redirect()->route('rallies.show', $rally)
+        $redirect = redirect()->route('rallies.show', $rally)
             ->with('status', $result['message']);
+
+        if (($result['status'] ?? null) === 'stamped') {
+            $redirect->with('checkin_celebration', [
+                'is_completed' => (bool) ($result['is_rally_completed'] ?? false),
+                'is_newly_completed' => (bool) ($result['is_newly_completed'] ?? false),
+                'location_name' => $location->name,
+                'location_id' => $location->id,
+                'stamped_count' => $result['stamped_count'] ?? null,
+                'required_count' => $result['required_count'] ?? null,
+            ]);
+        }
+
+        return $redirect;
     }
 
     public function certificate(Request $request, StampRally $rally): View|RedirectResponse

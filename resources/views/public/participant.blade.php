@@ -37,8 +37,8 @@
                 </div>
             </div>
 
-            <!-- Achievement Badge -->
-            <div class="self-start sm:self-center shrink-0">
+            <!-- Achievement Badge & Share -->
+            <div class="self-start sm:self-center shrink-0 flex flex-col sm:items-end gap-2">
                 @if ($participation->completed_at)
                     <div class="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs sm:text-sm font-extrabold px-4 py-2.5 rounded-xl shadow-md">
                         <span>🏆</span>
@@ -49,6 +49,14 @@
                         <span>進行中</span>
                     </div>
                 @endif
+                @include('partials.sns-share', [
+                    'title' => "{$user->name} さんの参加状況 | {$rally->title}",
+                    'text' => $participation->completed_at
+                        ? "🎉 「{$rally->title}」をコンプリート達成しました！🏆\n#Stampippi #スタンプラリー"
+                        : "スタンプラリー「{$rally->title}」に参加中！💮\n#Stampippi #スタンプラリー",
+                    'url' => route('rallies.participants.show', [$rally, $user]),
+                    'size' => 'xs',
+                ])
             </div>
         </div>
 

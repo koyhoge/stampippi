@@ -154,7 +154,8 @@ class StampCheckinService
             $requiredCount = $rally->requiredCount();
             $isCompleted = $requiredCount > 0 && $stampedCount >= $requiredCount;
 
-            if ($isCompleted && ! $participation->completed_at) {
+            $isNewlyCompleted = $isCompleted && ! $participation->completed_at;
+            if ($isNewlyCompleted) {
                 $participation->update(['completed_at' => $now]);
             }
 
@@ -168,6 +169,9 @@ class StampCheckinService
                 'radius_meters' => $location->radius_meters,
                 'stamp' => $stamp,
                 'is_rally_completed' => $isCompleted,
+                'is_newly_completed' => $isNewlyCompleted,
+                'stamped_count' => $stampedCount,
+                'required_count' => $requiredCount,
             ];
         });
     }

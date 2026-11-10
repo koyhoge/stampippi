@@ -42,7 +42,17 @@
             達成日時: {{ $participation->completed_at->format('Y年m月d日 H:i') }} ／ 主催: {{ $rally->ownerName() }}
         </div>
 
-        <div class="pt-4">
+        <div class="pt-4 pb-1 border-t border-slate-200/80 flex flex-col items-center justify-center gap-2">
+            <span class="text-xs font-bold text-slate-700">🏆 快挙をSNSでシェアしよう！</span>
+            @include('partials.sns-share', [
+                'title' => "🏆 「{$rally->title}」コンプリート達成証！",
+                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー #コンプリート",
+                'url' => route('rallies.certificate', $rally),
+                'size' => 'md',
+            ])
+        </div>
+
+        <div class="pt-2">
             <a href="{{ route('rallies.show', $rally) }}" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition">
                 ← スタンプラリー画面に戻る
             </a>

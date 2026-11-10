@@ -142,6 +142,30 @@
         @endauth
     </nav>
 
+    <script>
+        function shareStampippi(title, text, url) {
+            const shareData = {
+                title: title,
+                text: text,
+                url: url || window.location.href
+            };
+            if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                navigator.share(shareData).catch(() => {});
+            } else {
+                const copyText = (text ? text + '\n' : '') + shareData.url;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        alert('共有用テキストとURLをクリップボードにコピーしました！');
+                    }).catch(() => {
+                        window.prompt('以下のURLをコピーしてシェアしてください:', shareData.url);
+                    });
+                } else {
+                    window.prompt('以下のURLをコピーしてシェアしてください:', shareData.url);
+                }
+            }
+        }
+    </script>
+
     @stack('scripts')
 </body>
 </html>
