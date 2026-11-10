@@ -45,6 +45,12 @@
             @endif
         </div>
 
+        @if (! $isEdit && auth()->user()->maxRalliesAllowed() !== null)
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3.5 text-xs text-indigo-900 flex items-center justify-between gap-2">
+                <span>ℹ️ 作成制限: あなたのアカウントはあと <strong>{{ auth()->user()->remainingRalliesCount() }}個</strong> のスタンプラリーを作成できます（上限 {{ auth()->user()->maxRalliesAllowed() }}個）。</span>
+            </div>
+        @endif
+
         <form method="POST" action="{{ $isEdit ? route('my.rallies.update', $rally) : route('my.rallies.store') }}" class="space-y-4">
             @csrf
             @if ($isEdit)

@@ -43,20 +43,35 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap gap-2.5">
+        <div class="flex flex-wrap items-center gap-2.5">
             @if ($user->canCreateSeries())
                 <a href="{{ route('my.series.create') }}" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-4 py-2.5 rounded-xl transition">
                     📚 ＋ ラリーシリーズ作成
                 </a>
             @endif
-            @if ($user->canCreateRally())
-                <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
-                    🗺️ ＋ スタンプラリー作成
-                </a>
-            @elseif ($user->maxRalliesAllowed() !== null)
-                <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-200" title="作成上限に達しています">
-                    <span>⚠️ 作成上限 ({{ $user->maxRalliesAllowed() }}件) 到達</span>
-                </span>
+            @if ($user->maxRalliesAllowed() !== null)
+                @if ($user->canCreateRally())
+                    <div class="flex flex-col sm:items-end gap-1">
+                        <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+                            🗺️ ＋ スタンプラリー作成
+                        </a>
+                        <span class="text-[11px] font-semibold text-slate-500">
+                            あと <strong class="text-indigo-600 font-bold">{{ $user->remainingRalliesCount() }}個</strong> のラリーを作成できます（上限 {{ $user->maxRalliesAllowed() }}個）
+                        </span>
+                    </div>
+                @else
+                    <div class="flex flex-col sm:items-end gap-1">
+                        <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-200">
+                            <span>⚠️ 作成上限（{{ $user->maxRalliesAllowed() }}個）に達しました</span>
+                        </span>
+                    </div>
+                @endif
+            @else
+                @if ($user->canCreateRally())
+                    <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+                        🗺️ ＋ スタンプラリー作成
+                    </a>
+                @endif
             @endif
         </div>
     </div>
@@ -66,12 +81,19 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-xl font-bold text-slate-900">🗺️ 管理中のスタンプラリー ({{ $manageableRallies->count() }}件)</h2>
-                <p class="text-xs text-slate-500">各ラリーの開催期間・コンプリート条件・ベニュー（スタンプロケーション）を編集できます</p>
+                <p class="text-xs text-slate-500">
+                    各ラリーの開催期間・コンプリート条件・ベニュー（スタンプロケーション）を編集できます
+                    @if ($user->maxRalliesAllowed() !== null)
+                        <span class="text-indigo-600 font-semibold ml-1">
+                            （あと {{ $user->remainingRalliesCount() }}個 作成可能 / 上限 {{ $user->maxRalliesAllowed() }}個）
+                        </span>
+                    @endif
+                </p>
             </div>
             @if ($user->canCreateRally())
-                <a href="{{ route('my.rallies.create') }}" class="text-xs font-bold text-indigo-600 hover:underline">＋ スタンプラリー作成</a>
+                <a href="{{ route('my.rallies.create') }}" class="text-xs font-bold text-indigo-600 hover:underline">＋ スタンプラリー作成@if ($user->maxRalliesAllowed() !== null) (あと{{ $user->remainingRalliesCount() }}個)@endif</a>
             @elseif ($user->maxRalliesAllowed() !== null)
-                <span class="text-xs font-medium text-slate-400">作成上限 ({{ $user->maxRalliesAllowed() }}件)</span>
+                <span class="text-xs font-medium text-slate-400">作成上限到達（{{ $user->maxRalliesAllowed() }}個）</span>
             @endif
         </div>
 

@@ -42,7 +42,15 @@ class RallyCreationLimitTest extends TestCase
         ]);
 
         $this->assertEquals(2, $user->maxRalliesAllowed());
+        $this->assertEquals(2, $user->remainingRalliesCount());
         $this->assertTrue($user->canCreateRally());
+
+        // Manage index shows "あと 2個 のラリーを作成できます" initially
+        $this->actingAs($user)
+            ->get('/my')
+            ->assertStatus(200)
+            ->assertSeeText('あと 2個 のラリーを作成できます')
+            ->assertSee('＋ スタンプラリー作成 (あと2個)');
 
         // 1st rally creation
         $this->actingAs($user)
@@ -55,7 +63,21 @@ class RallyCreationLimitTest extends TestCase
             ->assertRedirect();
 
         $this->assertEquals(1, $user->createdRallies()->count());
+        $this->assertEquals(1, $user->fresh()->remainingRalliesCount());
         $this->assertTrue($user->fresh()->canCreateRally());
+
+        // Manage index shows "あと 1個 のラリーを作成できます"
+        $this->actingAs($user)
+            ->get('/my')
+            ->assertStatus(200)
+            ->assertSeeText('あと 1個 のラリーを作成できます')
+            ->assertSee('＋ スタンプラリー作成 (あと1個)');
+
+        // Create form also displays remaining count banner
+        $this->actingAs($user)
+            ->get('/my/rallies/create')
+            ->assertStatus(200)
+            ->assertSeeText('あと 1個 のスタンプラリーを作成できます');
 
         // 2nd rally creation (reaches limit)
         $this->actingAs($user)
@@ -68,13 +90,14 @@ class RallyCreationLimitTest extends TestCase
             ->assertRedirect();
 
         $this->assertEquals(2, $user->createdRallies()->count());
+        $this->assertEquals(0, $user->fresh()->remainingRalliesCount());
         $this->assertFalse($user->fresh()->canCreateRally());
 
         // Manage index shows limit reached badge instead of creation button
         $this->actingAs($user)
             ->get('/my')
             ->assertStatus(200)
-            ->assertSee('作成上限 (2件) 到達')
+            ->assertSee('作成上限（2個）に達しました')
             ->assertDontSee('🗺️ ＋ スタンプラリー作成');
 
         // Trying to access create form returns 403

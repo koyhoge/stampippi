@@ -199,6 +199,16 @@ class User extends Authenticatable
         return (int) $limit;
     }
 
+    public function remainingRalliesCount(): ?int
+    {
+        $max = $this->maxRalliesAllowed();
+        if ($max === null) {
+            return null;
+        }
+
+        return max(0, $max - $this->createdRallies()->count());
+    }
+
     public function canCreateRally(): bool
     {
         $max = $this->maxRalliesAllowed();
