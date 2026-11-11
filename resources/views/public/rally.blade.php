@@ -23,11 +23,19 @@
         <div class="rounded-2xl p-5 sm:p-6 shadow-md border-2 {{ $isComplete ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-300' : 'bg-emerald-50 border-emerald-300 text-emerald-950' }} space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="space-y-1">
-                    <div class="text-xs font-bold uppercase tracking-wider {{ $isComplete ? 'text-amber-100' : 'text-emerald-700' }}">
-                        {{ $isComplete ? '🏆 RALLY COMPLETED!' : '💮 STAMP ACQUIRED!' }}
+                    <div class="text-xs font-bold uppercase tracking-wider {{ $isComplete ? 'text-amber-100' : 'text-emerald-700' }} flex items-center gap-1.5">
+                        @if ($isComplete)
+                            <span>🏆 RALLY COMPLETED!</span>
+                        @else
+                            <img src="{{ asset('favicon.svg') }}" alt="" class="w-4 h-4 rounded-xs inline-block">
+                            <span>STAMP ACQUIRED!</span>
+                        @endif
                     </div>
                     <h2 class="text-lg sm:text-xl font-extrabold flex items-center gap-2">
-                        <span>{{ $isComplete ? '🎉 コンプリート達成おめでとうございます！' : '💮 スタンプを獲得しました！' }}</span>
+                        @if (! $isComplete)
+                            <img src="{{ asset('favicon.svg') }}" alt="" class="w-6 h-6 rounded-md shrink-0">
+                        @endif
+                        <span>{{ $isComplete ? '🎉 コンプリート達成おめでとうございます！' : 'スタンプを獲得しました！' }}</span>
                     </h2>
                     <p class="text-xs sm:text-sm {{ $isComplete ? 'text-amber-100' : 'text-emerald-800' }}">
                         @if ($isComplete)
@@ -294,8 +302,9 @@
                         <div class="pt-2 border-t border-slate-100">
                             @if ($stamp)
                                 <div class="space-y-2">
-                                    <div class="w-full text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl">
-                                        💮 スタンプ獲得済み ({{ $stamp->stamped_at->format('Y/m/d H:i') }})
+                                    <div class="w-full text-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl flex items-center justify-center gap-1.5">
+                                        <img src="{{ asset('favicon.svg') }}" alt="" class="w-4 h-4 rounded-xs shrink-0">
+                                        <span>スタンプ獲得済み ({{ $stamp->stamped_at->format('Y/m/d H:i') }})</span>
                                     </div>
                                     <div class="flex items-center justify-between gap-1 text-[11px] text-slate-500 pt-0.5">
                                         <span>獲得をシェア:</span>

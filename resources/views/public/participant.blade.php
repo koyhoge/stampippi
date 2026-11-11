@@ -93,7 +93,7 @@
     <!-- Stamp Collection Grid for this Participant -->
     <div class="space-y-4">
         <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span>💮</span>
+            <img src="{{ asset('favicon.svg') }}" alt="" class="w-5 h-5 rounded-md shrink-0">
             <span>スタンプ獲得一覧</span>
         </h2>
 
@@ -122,8 +122,9 @@
                             {{ $location->availabilityLabel() }}
                         </p>
                         @if ($stamp)
-                            <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded inline-block">
-                                💮 {{ $stamp->stamped_at->format('Y/m/d H:i') }} 獲得
+                            <div class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                                <img src="{{ asset('favicon.svg') }}" alt="" class="w-3.5 h-3.5 rounded-xs shrink-0">
+                                <span>{{ $stamp->stamped_at->format('Y/m/d H:i') }} 獲得</span>
                             </div>
                         @else
                             <div class="text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded inline-block">

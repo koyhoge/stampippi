@@ -19,8 +19,8 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
             <div class="flex items-center gap-6">
-                <a href="{{ route('home') }}" class="flex items-center gap-1.5 font-extrabold text-lg sm:text-xl text-indigo-600 tracking-tight">
-                    <span class="text-xl sm:text-2xl">💮</span>
+                <a href="{{ route('home') }}" class="flex items-center gap-2 font-extrabold text-lg sm:text-xl text-indigo-600 tracking-tight">
+                    <img src="{{ asset('favicon.svg') }}" alt="Stampippi" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg shadow-xs">
                     <span>Stampippi</span>
                 </a>
                 <nav class="hidden sm:flex items-center gap-4 text-sm font-medium text-slate-600">

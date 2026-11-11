@@ -25,7 +25,9 @@
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
         @if ($stamps->isEmpty())
             <div class="py-12 text-center space-y-3">
-                <div class="text-4xl">💮</div>
+                <div class="flex justify-center">
+                    <img src="{{ asset('favicon.svg') }}" alt="Stampippi" class="w-12 h-12 rounded-xl shadow-xs opacity-75">
+                </div>
                 <p class="text-sm font-bold text-slate-700">まだ獲得したスタンプがありません</p>
                 <p class="text-xs text-slate-500">スタンプラリーに参加してベニューでチェックインすると、ここに足跡が記録されます。</p>
                 <a href="{{ route('dashboard') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl">

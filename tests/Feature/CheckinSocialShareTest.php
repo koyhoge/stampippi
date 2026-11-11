@@ -77,7 +77,7 @@ class CheckinSocialShareTest extends TestCase
 
         // Checkin celebration banner and SNS share buttons
         $pageResponse->assertSee('STAMP ACQUIRED!');
-        $pageResponse->assertSee('💮 スタンプを獲得しました！');
+        $pageResponse->assertSee('スタンプを獲得しました！');
         $pageResponse->assertSee('SNSでシェアする:');
         $pageResponse->assertSee('https://twitter.com/intent/tweet?text=', false);
         $pageResponse->assertSee('https://line.me/R/msg/text/?', false);

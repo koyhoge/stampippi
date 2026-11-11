@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;">
+    <path id="ベース" d="M428.669,0C474.109,0 511,36.891 511,82.331L511,429.669C511,475.109 474.109,512 428.669,512L82.331,512C36.891,512 0,475.109 0,429.669L0,82.331C0,36.891 36.891,0 82.331,0L428.669,0Z" style="fill:url(#_Linear1);"/>
+    <g transform="matrix(1,0,0,1,0,-9)">
+        <g id="波紋">
+            <g opacity="0.62">
+                <path d="M258.675,114.001C374.159,113.714 468.772,193.675 478.728,290.175C490.268,402.02 385.235,491.267 254.02,490.999C123.355,490.732 20.827,401.768 35.057,290.306C47.337,194.109 143.649,114.286 258.675,114.001ZM258.497,128.365C152.902,128.608 64.624,201.851 54.216,290.3C42.31,391.48 135.602,472.352 254.246,472.569C373.344,472.788 468.891,391.679 459.436,290.181C451.172,201.474 364.475,128.121 258.497,128.365ZM258.153,155.982C345.92,155.811 417.508,216.514 422.976,290.192C429.083,372.475 351.261,438.411 254.667,438.271C158.373,438.132 82.348,372.36 90.456,290.289C97.717,216.791 170.647,156.153 258.153,155.982ZM257.946,172.648C181.329,172.782 117.603,225.846 111.959,290.283C105.746,361.21 171.634,418.164 254.913,418.265C338.416,418.367 405.842,361.286 401.364,290.198C397.297,225.622 334.762,172.515 257.946,172.648Z" style="fill:white;"/>
+            </g>
+        </g>
+    </g>
+    <g id="マーカー影">
+        <g>
+            <g id="marker" transform="matrix(1.077687,0,0,1.047077,-16.25469,-31.243158)">
+                <g opacity="0.33">
+                    <path id="pin-body" d="M251.12,429.519C247.343,382.399 157.488,325.708 175.225,241.54C185.107,194.647 239.27,155.199 296.735,154.144C354.968,153.076 396.651,191.75 390.953,239.134C380.672,324.626 270.443,382.597 251.12,429.519Z" style="fill:rgb(3,3,3);fill-rule:nonzero;stroke:black;stroke-width:18px;"/>
+                </g>
+            </g>
+        </g>
+    </g>
+    <g id="マーカー">
+        <g id="marker1" affinity:id="marker" transform="matrix(1.077687,0,0,1.047077,-16.25469,-31.243158)">
+            <g id="pin-body1" affinity:id="pin-body">
+                <path d="M250,430C238,372 132,300 132,190C132,125.267 185.267,72 250,72C314.733,72 368,125.267 368,190C368,300 262,372 250,430Z" style="fill:url(#_LinearPin);fill-rule:nonzero;stroke:white;stroke-width:18px;"/>
+            </g>
+            <circle id="pin-hole" cx="250" cy="190" r="64" style="fill:white;"/>
+        </g>
+        <g id="check" transform="matrix(1.007139,0,0,0.96134,-3.971157,-57.480976)">
+            <path d="M190,198C196,228 210,256 233,274C246,284 261,282 276,267C316,229 368,178 414,128C420,121 413,113 401,119C352,152 296,203 259,230C245,240 234,233 225,214C217,197 207,189 198,189C191,189 188,192 190,198Z" style="fill:rgb(237,28,36);fill-rule:nonzero;"/>
+        </g>
+    </g>
+    <defs>
+        <linearGradient id="_Linear1" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" gradientTransform="matrix(497,504,-504,497,-1,0)"><stop offset="0" style="stop-color:rgb(36,80,239);stop-opacity:1"/><stop offset="1" style="stop-color:rgb(72,11,201);stop-opacity:1"/></linearGradient>
+    <linearGradient id="_LinearPin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:#1b9bf0;stop-opacity:1"/><stop offset="0.5" style="stop-color:#4363ee;stop-opacity:1"/><stop offset="1" style="stop-color:#7c2ae8;stop-opacity:1"/></linearGradient>
+        </defs>
+</svg>
