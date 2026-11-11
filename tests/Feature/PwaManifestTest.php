@@ -48,4 +48,18 @@ class PwaManifestTest extends TestCase
             ->assertSee('<meta name="apple-mobile-web-app-capable" content="yes">', false)
             ->assertSee('<meta name="apple-mobile-web-app-title" content="Stampippi">', false);
     }
+
+    public function test_service_worker_file_exists_and_layout_registers_it(): void
+    {
+        $swPath = public_path('sw.js');
+        $this->assertFileExists($swPath);
+
+        $swContent = file_get_contents($swPath);
+        $this->assertStringContainsString("CACHE = 'stampippi-static-v1'", $swContent);
+        $this->assertStringContainsString("STATIC_PATHS", $swContent);
+
+        $response = $this->get('/');
+        $response->assertStatus(200)
+            ->assertSee("navigator.serviceWorker.register('/sw.js')", false);
+    }
 }
