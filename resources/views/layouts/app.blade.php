@@ -109,6 +109,7 @@
                 @else
                     <a href="{{ route('login') }}" class="hover:text-slate-800">ログイン</a>
                 @endauth
+                <a href="{{ route('privacy') }}" class="hover:text-slate-800">プライバシーポリシー</a>
             </div>
         </div>
     </footer>

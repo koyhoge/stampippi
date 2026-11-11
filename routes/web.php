@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public pages
 Route::get('/', [PublicRallyController::class, 'home'])->name('home');
+Route::get('/privacy', [PublicRallyController::class, 'privacy'])->name('privacy');
 Route::get('/groups/{group:slug}', [PublicRallyController::class, 'showGroup'])->name('groups.show');
 Route::get('/series/{series:slug}', [PublicRallyController::class, 'showSeries'])->name('series.show');
 Route::get('/rallies/{rally:slug}', [PublicRallyController::class, 'showRally'])->name('rallies.show');

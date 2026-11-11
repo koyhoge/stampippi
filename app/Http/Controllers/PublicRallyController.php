@@ -277,4 +277,9 @@ class PublicRallyController extends Controller
 
         return view('public.certificate', compact('rally', 'participation', 'userStamps'));
     }
+
+    public function privacy(): View
+    {
+        return view('public.privacy');
+    }
 }
