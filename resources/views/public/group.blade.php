@@ -52,7 +52,7 @@
     @endif
 
     <section class="space-y-4">
-        <h2 class="text-xl font-bold text-slate-900">🗺️ 主催スタンプラリー</h2>
+        <h2 class="text-xl font-bold text-slate-900">🧭 主催スタンプラリー</h2>
         @if ($group->rallies->isEmpty())
             <p class="text-sm text-slate-500 bg-white rounded-xl p-6 border border-slate-200">公開中のスタンプラリーはありません。</p>
         @else

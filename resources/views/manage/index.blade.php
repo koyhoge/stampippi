@@ -7,7 +7,7 @@
     <!-- Management Sub-Navigation Tabs -->
     <div class="flex items-center gap-2 border-b border-slate-200 pb-3">
         <a href="{{ route('my.index') }}" class="inline-flex items-center gap-1.5 bg-indigo-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-xl shadow-sm">
-            <span>🗺️ ラリー・シリーズ管理</span>
+            <span>🧭 ラリー・シリーズ管理</span>
         </a>
         @if ($user->canManageAnyGroup())
             <a href="{{ route('my.groups.index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-bold px-4 py-2 rounded-xl transition">
@@ -30,7 +30,7 @@
                 @endif
             </div>
             <h1 class="text-2xl font-extrabold text-slate-900">
-                🗺️ スタンプラリー・シリーズ管理
+                🧭 スタンプラリー・シリーズ管理
             </h1>
             <p class="text-xs text-slate-500">
                 @if ($user->isAdmin())
@@ -53,7 +53,7 @@
                 @if ($user->canCreateRally())
                     <div class="flex flex-col sm:items-end gap-1">
                         <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
-                            🗺️ ＋ スタンプラリー作成
+                            🧭 ＋ スタンプラリー作成
                         </a>
                         <span class="text-[11px] font-semibold text-slate-500">
                             あと <strong class="text-indigo-600 font-bold">{{ $user->remainingRalliesCount() }}個</strong> のラリーを作成できます（上限 {{ $user->maxRalliesAllowed() }}個）
@@ -69,7 +69,7 @@
             @else
                 @if ($user->canCreateRally())
                     <a href="{{ route('my.rallies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
-                        🗺️ ＋ スタンプラリー作成
+                        🧭 ＋ スタンプラリー作成
                     </a>
                 @endif
             @endif
@@ -80,7 +80,7 @@
     <section class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold text-slate-900">🗺️ 管理中のスタンプラリー ({{ $manageableRallies->count() }}件)</h2>
+                <h2 class="text-xl font-bold text-slate-900">🧭 管理中のスタンプラリー ({{ $manageableRallies->count() }}件)</h2>
                 <p class="text-xs text-slate-500">
                     各ラリーの開催期間・コンプリート条件・ベニュー（スタンプロケーション）を編集できます
                     @if ($user->maxRalliesAllowed() !== null)

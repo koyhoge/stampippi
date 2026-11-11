@@ -169,7 +169,7 @@
                         ${itemIconHtml}${escapeHtml(item.location_name)}
                     </div>
                     <div style="font-size:12px;margin-top:2px;">
-                        🗺️ ラリー: <a href="${escapeHtml(item.rally_url)}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
+                        🧭 ラリー: <a href="${escapeHtml(item.rally_url)}" style="color:#4F46E5;font-weight:700;text-decoration:underline;">${escapeHtml(item.rally_title)}</a>
                     </div>
                     <div style="font-size:11px;color:#64748b;margin-top:2px;">
                         🕒 打刻日時: <strong>${escapeHtml(item.stamped_at)}</strong>

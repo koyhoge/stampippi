@@ -161,7 +161,7 @@
     <section id="public-rallies" class="space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-baseline gap-2">
-                <h2 class="text-lg font-bold text-slate-900">🗺️ 開催中のスタンプラリーを探す</h2>
+                <h2 class="text-lg font-bold text-slate-900">🧭 開催中のスタンプラリーを探す</h2>
                 <span class="text-xs text-slate-500">
                     @if ($keyword !== '')
                         「{{ $keyword }}」の検索結果: {{ $totalPublicActiveCount }}件（最大6件表示）

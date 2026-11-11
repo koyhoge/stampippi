@@ -98,7 +98,7 @@ class RallyCreationLimitTest extends TestCase
             ->get('/my')
             ->assertStatus(200)
             ->assertSee('作成上限（2個）に達しました')
-            ->assertDontSee('🗺️ ＋ スタンプラリー作成');
+            ->assertDontSee('🧭 ＋ スタンプラリー作成');
 
         // Trying to access create form returns 403
         $this->actingAs($user)

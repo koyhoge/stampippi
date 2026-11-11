@@ -32,7 +32,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-extrabold text-slate-900">
-                    🗺️ {{ $isEdit ? 'スタンプラリー設定・ベニュー管理' : '新しいスタンプラリーを作成' }}
+                    🧭 {{ $isEdit ? 'スタンプラリー設定・ベニュー管理' : '新しいスタンプラリーを作成' }}
                 </h1>
                 <p class="text-xs text-slate-500 mt-1">
                     開催期間を指定しない「常設ラリー」としても、期間付きのイベントラリーとしても作成できます。
