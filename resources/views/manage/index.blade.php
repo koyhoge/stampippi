@@ -116,12 +116,6 @@
                         <div class="flex items-center gap-2 shrink-0">
                             <a href="{{ route('rallies.show', $rally) }}" class="text-xs text-slate-600 hover:underline px-2 py-1">表示</a>
                             <a href="{{ route('my.rallies.edit', $rally) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">管理・ベニュー編集</a>
-                            <button type="button"
-                                onclick="openDeleteRallyModal('{{ route('my.rallies.destroy', $rally) }}', '{{ addslashes($rally->title) }}', {{ $rally->locations->count() }}, {{ $rally->participations()->count() }})"
-                                class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 font-semibold px-2 py-1.5 rounded-lg transition"
-                                title="ラリーを削除">
-                                🗑️ 削除
-                            </button>
                         </div>
                     </div>
                 @endforeach
@@ -175,100 +169,5 @@
         @endif
     </section>
     @endif
-
-    <!-- Delete Rally Confirmation Modal -->
-    <div id="delete-rally-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="delete-rally-modal-title" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeDeleteRallyModal()"></div>
-
-        <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full max-w-lg border border-slate-200">
-                <div class="bg-rose-50 border-b border-rose-100 px-6 py-4 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="text-2xl">⚠️</span>
-                        <h3 class="text-lg font-bold text-rose-900" id="delete-rally-modal-title">
-                            スタンプラリーの削除確認
-                        </h3>
-                    </div>
-                    <button type="button" onclick="closeDeleteRallyModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1 leading-none">×</button>
-                </div>
-
-                <div class="p-6 space-y-4">
-                    <p class="text-sm text-slate-700 leading-relaxed">
-                        本当にスタンプラリー「<strong id="modal-rally-title" class="font-bold text-slate-900"></strong>」を削除しますか？
-                    </p>
-
-                    <div class="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-rose-800 space-y-2">
-                        <p class="font-bold">⚠️ 以下のデータがすべて完全に削除され、復元できません：</p>
-                        <ul class="list-disc list-inside space-y-1 text-rose-700">
-                            <li>登録されているスタンプロケーション（ベニュー: <span id="modal-locations-count" class="font-bold">0</span>件）</li>
-                            <li>参加者のチェックイン履歴および完走証（<span id="modal-participations-count" class="font-bold">0</span>件）</li>
-                            <li>このスタンプラリーの設定情報・公開URL</li>
-                        </ul>
-                    </div>
-
-                    <div class="pt-2">
-                        <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
-                            <input type="checkbox" id="confirm-delete-checkbox" onchange="toggleDeleteButton(this.checked)" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
-                            <span>上記の注意事項を理解し、このスタンプラリーを完全に削除することに同意します</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-end gap-3">
-                    <button type="button" onclick="closeDeleteRallyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
-                        キャンセル
-                    </button>
-                    <form id="delete-rally-form" method="POST" action="">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" id="execute-delete-btn" disabled class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition">
-                            🗑️ 完全に削除する
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
-
-@push('scripts')
-<script>
-    function openDeleteRallyModal(actionUrl, title, locationsCount, participationsCount) {
-        const modal = document.getElementById('delete-rally-modal');
-        const form = document.getElementById('delete-rally-form');
-        const titleEl = document.getElementById('modal-rally-title');
-        const locCountEl = document.getElementById('modal-locations-count');
-        const partCountEl = document.getElementById('modal-participations-count');
-        const chk = document.getElementById('confirm-delete-checkbox');
-        const btn = document.getElementById('execute-delete-btn');
-
-        if (form) form.action = actionUrl;
-        if (titleEl) titleEl.textContent = title;
-        if (locCountEl) locCountEl.textContent = locationsCount;
-        if (partCountEl) partCountEl.textContent = participationsCount;
-        if (chk) chk.checked = false;
-        if (btn) btn.disabled = true;
-
-        if (modal) {
-            modal.classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
-        }
-    }
-
-    function closeDeleteRallyModal() {
-        const modal = document.getElementById('delete-rally-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-    }
-
-    function toggleDeleteButton(checked) {
-        const btn = document.getElementById('execute-delete-btn');
-        if (btn) {
-            btn.disabled = !checked;
-        }
-    }
-</script>
-@endpush
 @endsection
