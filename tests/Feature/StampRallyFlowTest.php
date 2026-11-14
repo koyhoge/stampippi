@@ -39,6 +39,14 @@ class StampRallyFlowTest extends TestCase
             ->assertStatus(200)
             ->assertSee('大田区産業プラザPiO')
             ->assertSee('グランフロント大阪');
+
+        // In production environment, GPS status card is hidden and JS coordinates display is safely guarded
+        $this->app['env'] = 'production';
+        config(['app.dev_tools' => false]);
+        $this->get('/rallies/phpcon-japan-2026')
+            ->assertStatus(200)
+            ->assertDontSee('id="gps-coords-display"', false)
+            ->assertSee('if (coordsDisplay)', false);
     }
 
     public function test_admin_and_group_member_and_general_user_permissions_with_gps_checkin(): void

@@ -583,8 +583,11 @@
                 longitude: pos.coords.longitude,
                 accuracy: pos.coords.accuracy || null
             };
-            document.getElementById('gps-coords-display').textContent =
-                `現在地 Lat: ${coords.latitude.toFixed(6)}, Lng: ${coords.longitude.toFixed(6)}`;
+            const coordsDisplay = document.getElementById('gps-coords-display');
+            if (coordsDisplay) {
+                coordsDisplay.textContent =
+                    `現在地 Lat: ${coords.latitude.toFixed(6)}, Lng: ${coords.longitude.toFixed(6)}`;
+            }
             updateUserPin(coords.latitude, coords.longitude, '📍 現在のあなたの位置');
             onSuccess(coords);
         }, function (err) {
