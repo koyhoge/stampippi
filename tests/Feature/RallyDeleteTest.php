@@ -65,6 +65,14 @@ class RallyDeleteTest extends TestCase
             'distance_meters' => 5,
         ]);
 
+        // Manage index page also displays rich confirmation modal and delete trigger
+        $this->actingAs($user)
+            ->get(route('my.index'))
+            ->assertStatus(200)
+            ->assertSee('🗑️ 削除')
+            ->assertSee('delete-rally-modal')
+            ->assertSee('上記の注意事項を理解し、このスタンプラリーを完全に削除することに同意します');
+
         // Edit page displays danger zone and delete confirmation modal
         $this->actingAs($user)
             ->get(route('my.rallies.edit', $rally))
