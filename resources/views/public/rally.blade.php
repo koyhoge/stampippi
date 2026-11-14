@@ -9,14 +9,15 @@
             $cel = session('checkin_celebration');
             $isComplete = !empty($cel['is_completed']);
             $locName = $cel['location_name'] ?? 'ベニュー';
+            $locHashtag = !empty($cel['location_hashtag']) ? ' ' . $cel['location_hashtag'] : '';
             $rallyUrl = route('rallies.show', $rally);
             if ($isComplete) {
                 $shareTitle = "🎉 スタンプラリー「{$rally->title}」をコンプリートしました！";
-                $shareText = "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー";
+                $shareText = "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー{$locHashtag}";
                 $shareUrl = route('rallies.certificate', $rally);
             } else {
                 $shareTitle = "💮 「{$locName}」でスタンプを獲得！";
-                $shareText = "スタンプラリー「{$rally->title}」の「{$locName}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー";
+                $shareText = "スタンプラリー「{$rally->title}」の「{$locName}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー{$locHashtag}";
                 $shareUrl = $rallyUrl;
             }
         @endphp
@@ -256,6 +257,11 @@
                                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                                     <span>半径 {{ $location->radius_meters }}m</span>
                                     <span>• {{ $location->availabilityLabel() }}</span>
+                                    @if ($location->hashtag)
+                                        <span class="font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-bold text-[11px]">
+                                            {{ $location->hashtag }}
+                                        </span>
+                                    @endif
                                     <span id="distance-badge-{{ $location->id }}" class="hidden font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded"></span>
                                 </div>
 
@@ -457,6 +463,7 @@
         marker.bindPopup(`
             <div class="text-xs space-y-1">
                 <div class="font-bold text-sm">${iconHtml}${escapeHtml(loc.name)}</div>
+                ${loc.hashtag ? `<div class="font-mono text-[11px] text-indigo-600 font-bold">${escapeHtml(loc.hashtag)}</div>` : ''}
                 <div class="text-slate-600">判定半径: ${Number(loc.radius_meters)}m</div>
                 <div class="text-slate-500">${escapeHtml(loc.availability_label)}</div>
                 <div class="font-bold ${loc.is_stamped ? 'text-emerald-600' : 'text-indigo-600'}">

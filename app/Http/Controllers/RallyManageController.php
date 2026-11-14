@@ -267,6 +267,7 @@ class RallyManageController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'hashtag' => ['nullable', 'string', 'max:100'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'radius_meters' => ['required', 'integer', 'min:10', 'max:10000'],
@@ -291,6 +292,7 @@ class RallyManageController extends Controller
         $rally->locations()->create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'hashtag' => ($validated['hashtag'] ?? null) ?: null,
             'latitude' => round((float) $validated['latitude'], 6),
             'longitude' => round((float) $validated['longitude'], 6),
             'radius_meters' => $validated['radius_meters'],
@@ -320,6 +322,7 @@ class RallyManageController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'hashtag' => ['nullable', 'string', 'max:100'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'radius_meters' => ['required', 'integer', 'min:10', 'max:10000'],
@@ -357,6 +360,7 @@ class RallyManageController extends Controller
         $location->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'hashtag' => ($validated['hashtag'] ?? null) ?: null,
             'latitude' => round((float) $validated['latitude'], 6),
             'longitude' => round((float) $validated['longitude'], 6),
             'radius_meters' => $validated['radius_meters'],
@@ -412,6 +416,7 @@ class RallyManageController extends Controller
         $rally->locations()->create([
             'name' => $source->name,
             'description' => $source->description,
+            'hashtag' => $source->hashtag,
             'latitude' => $source->latitude,
             'longitude' => $source->longitude,
             'radius_meters' => $source->radius_meters,

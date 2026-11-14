@@ -107,6 +107,7 @@ class PublicRallyController extends Controller
                 'id' => $loc->id,
                 'name' => $loc->name,
                 'description' => $loc->description,
+                'hashtag' => $loc->hashtag,
                 'latitude' => (float) $loc->latitude,
                 'longitude' => (float) $loc->longitude,
                 'radius_meters' => (int) $loc->radius_meters,
@@ -248,6 +249,7 @@ class PublicRallyController extends Controller
                 'is_newly_completed' => (bool) ($result['is_newly_completed'] ?? false),
                 'location_name' => $location->name,
                 'location_id' => $location->id,
+                'location_hashtag' => $location->hashtag,
                 'stamped_count' => $result['stamped_count'] ?? null,
                 'required_count' => $result['required_count'] ?? null,
             ]);

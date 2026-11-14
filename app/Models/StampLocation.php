@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\StampStorage\StampImageStorageManager;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +18,7 @@ class StampLocation extends Model
         'stamp_rally_id',
         'name',
         'description',
+        'hashtag',
         'latitude',
         'longitude',
         'radius_meters',
@@ -27,6 +29,23 @@ class StampLocation extends Model
         'stamp_color',
         'sort_order',
     ];
+
+    protected function hashtag(): Attribute
+    {
+        return Attribute::make(
+            set: function (?string $value) {
+                if ($value === null) {
+                    return null;
+                }
+                $value = trim($value);
+                if ($value === '') {
+                    return null;
+                }
+                $trimmed = ltrim($value, '#＃');
+                return $trimmed !== '' ? '#' . $trimmed : null;
+            }
+        );
+    }
 
     protected function casts(): array
     {

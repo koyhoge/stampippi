@@ -228,6 +228,11 @@
                                             <span class="font-sans text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-semibold text-[11px]">
                                                 期間: {{ $loc->availabilityLabel() }}
                                             </span>
+                                            @if ($loc->hashtag)
+                                                <span class="font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded font-bold text-[11px]">
+                                                    {{ $loc->hashtag }}
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -246,6 +251,7 @@
                                             'available_from' => $loc->available_from?->format('Y-m-d H:i') ?? '',
                                             'available_until' => $loc->available_until?->format('Y-m-d H:i') ?? '',
                                             'description' => $loc->description ?? '',
+                                            'hashtag' => $loc->hashtag ?? '',
                                             'update_url' => route('my.rallies.locations.update', [$rally, $loc]),
                                         ]) }})"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition">
@@ -461,6 +467,14 @@
                                         </label>
                                         <textarea id="venue-description" name="description" rows="2" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" placeholder="ヒントや行き方、開場時間など">{{ old('description') }}</textarea>
                                     </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                                            SNSハッシュタグ (任意)
+                                        </label>
+                                        <input type="text" id="venue-hashtag" name="hashtag" placeholder="例: #phpcon2026_tokyo" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-mono">
+                                        <p class="text-[10px] text-slate-500 mt-0.5">チェックイン時のSNSシェア文面に自動で追加されます（#は省略可）</p>
+                                    </div>
                                 </div>
 
                                 <!-- Right Column: Interactive Map & Search -->
@@ -533,6 +547,7 @@
     const customImageOption = document.getElementById('venue-custom-image-option');
     const imageInput = document.getElementById('venue-image');
     const descInput = document.getElementById('venue-description');
+    const hashtagInput = document.getElementById('venue-hashtag');
 
     let pickerMap = null;
     let previewMarker = null;
@@ -599,6 +614,7 @@
         setFlatpickrVal('venue-available-from', '');
         setFlatpickrVal('venue-available-until', '');
         descInput.value = '';
+        if (hashtagInput) hashtagInput.value = '';
 
         showModalCommon(defaultLat, defaultLng);
     }
@@ -632,6 +648,7 @@
         setFlatpickrVal('venue-available-from', loc.available_from || '');
         setFlatpickrVal('venue-available-until', loc.available_until || '');
         descInput.value = loc.description || '';
+        if (hashtagInput) hashtagInput.value = loc.hashtag || '';
 
         showModalCommon(lat, lng);
     }
