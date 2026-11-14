@@ -230,6 +230,33 @@ class RallyManageController extends Controller
             ->with('status', 'スタンプラリー基本情報を更新しました。');
     }
 
+    public function destroy(
+        Request $request,
+        StampRally $rally,
+        StampImageStorageManager $stampStorage
+    ): RedirectResponse {
+        $user = $request->user();
+        abort_unless($user->canManageRally($rally), 403, 'このスタンプラリーを削除する権限がありません。');
+
+        $title = $rally->title;
+
+        // Clean up custom stamp images associated with locations if not used elsewhere
+        $locations = $rally->locations()->get();
+        foreach ($locations as $location) {
+            if (
+                $location->hasCustomImage()
+                && ! StampLocation::where('id', '!=', $location->id)->where('stamp_icon_value', $location->stamp_icon_value)->exists()
+            ) {
+                $stampStorage->delete($location->stamp_icon_value);
+            }
+        }
+
+        $rally->delete();
+
+        return redirect()->route('my.index')
+            ->with('status', "スタンプラリー「{$title}」を削除しました。");
+    }
+
     public function storeLocation(
         Request $request,
         StampRally $rally,

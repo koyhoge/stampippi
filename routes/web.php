@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/rallies', [RallyManageController::class, 'store'])->name('rallies.store');
         Route::get('/rallies/{rally:slug}/edit', [RallyManageController::class, 'edit'])->name('rallies.edit');
         Route::put('/rallies/{rally:slug}', [RallyManageController::class, 'update'])->name('rallies.update');
+        Route::delete('/rallies/{rally:slug}', [RallyManageController::class, 'destroy'])->name('rallies.destroy');
 
         Route::post('/rallies/{rally:slug}/locations', [RallyManageController::class, 'storeLocation'])->name('rallies.locations.store');
         Route::post('/rallies/{rally:slug}/locations/copy', [RallyManageController::class, 'copyLocation'])->name('rallies.locations.copy');

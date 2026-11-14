@@ -116,6 +116,13 @@
                         <div class="flex items-center gap-2 shrink-0">
                             <a href="{{ route('rallies.show', $rally) }}" class="text-xs text-slate-600 hover:underline px-2 py-1">表示</a>
                             <a href="{{ route('my.rallies.edit', $rally) }}" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg">管理・ベニュー編集</a>
+                            <form method="POST" action="{{ route('my.rallies.destroy', $rally) }}" onsubmit="return confirm('スタンプラリー「{{ $rally->title }}」を削除しますか？\n\n※この操作は取り消せません。登録されているベニュー（{{ $rally->locations->count() }}件）や参加者の履歴もすべて削除されます。')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 font-semibold px-2 py-1.5 rounded-lg transition" title="ラリーを削除">
+                                    🗑️ 削除
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @endforeach
