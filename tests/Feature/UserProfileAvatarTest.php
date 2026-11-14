@@ -35,7 +35,13 @@ class UserProfileAvatarTest extends TestCase
             ->get(route('profile.edit'))
             ->assertStatus(200)
             ->assertSee('https://example.com/oauth-photo.jpg')
-            ->assertSee('連携サービス (OAuth) のアイコンを使用中');
+            ->assertSee('連携サービス (OAuth) のアイコンを使用中')
+            ->assertSee('for="handle"', false)
+            ->assertSee('id="handle"', false)
+            ->assertSee('for="name"', false)
+            ->assertSee('id="name"', false)
+            ->assertSee('autocomplete="username"', false)
+            ->assertSee('aria-describedby="handle-help"', false);
 
         $userWithoutAvatar = User::create([
             'handle' => 'user_plain',

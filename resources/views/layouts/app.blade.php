@@ -26,7 +26,7 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
             <div class="flex items-center gap-6">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 font-extrabold text-lg sm:text-xl text-indigo-600 tracking-tight">
-                    <img src="{{ asset('favicon.svg') }}" alt="Stampippi" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg shadow-xs">
+                    <img src="{{ asset('favicon.svg') }}" alt="" aria-hidden="true" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg shadow-xs">
                     <span>Stampippi</span>
                 </a>
                 <nav class="hidden sm:flex items-center gap-4 text-sm font-medium text-slate-600">
@@ -52,9 +52,9 @@
                 @auth
                     <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 sm:px-3 py-1 rounded-full transition">
                         @if (auth()->user()->avatarUrl())
-                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="w-6 h-6 rounded-full object-cover border border-slate-300 shrink-0">
+                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}のアバター" class="w-6 h-6 rounded-full object-cover border border-slate-300 shrink-0">
                         @else
-                            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                            <span role="img" aria-label="{{ auth()->user()->name }}のアバター" class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 select-none">
                                 {{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
                             </span>
                         @endif
@@ -121,29 +121,29 @@
     </footer>
 
     <!-- Smartphone Bottom Navigation Bar -->
-    <nav class="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 z-50 flex items-center justify-around h-14 px-2 shadow-lg">
+    <nav aria-label="モバイル下部ナビゲーション" class="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 z-50 flex items-center justify-around h-14 px-2 shadow-lg">
         @auth
             <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('dashboard') ? 'text-indigo-600' : 'text-slate-600' }}">
-                <span class="text-base leading-none">📖</span>
+                <span class="text-base leading-none" aria-hidden="true">📖</span>
                 <span class="mt-0.5">マイページ</span>
             </a>
             @if (auth()->user()->canAccessManagement())
                 <a href="{{ route('my.index') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('my.*') ? 'text-indigo-600' : 'text-slate-600' }}">
-                    <span class="text-base leading-none">⚙️</span>
+                    <span class="text-base leading-none" aria-hidden="true">⚙️</span>
                     <span class="mt-0.5">ラリー管理</span>
                 </a>
             @endif
             <a href="{{ route('profile.edit') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('profile.*') ? 'text-indigo-600' : 'text-slate-600' }}">
                 @if (auth()->user()->avatarUrl())
-                    <img src="{{ auth()->user()->avatarUrl() }}" alt="" class="w-5 h-5 rounded-full object-cover">
+                    <img src="{{ auth()->user()->avatarUrl() }}" alt="" aria-hidden="true" class="w-5 h-5 rounded-full object-cover">
                 @else
-                    <span class="text-base leading-none">👤</span>
+                    <span class="text-base leading-none" aria-hidden="true">👤</span>
                 @endif
                 <span class="mt-0.5">プロフィール</span>
             </a>
         @else
             <a href="{{ route('home') }}" class="flex flex-col items-center justify-center flex-1 py-1 text-[11px] font-semibold {{ request()->routeIs('home', 'login') ? 'text-indigo-600' : 'text-slate-600' }}">
-                <span class="text-base leading-none">🔑</span>
+                <span class="text-base leading-none" aria-hidden="true">🔑</span>
                 <span class="mt-0.5">ログイン</span>
             </a>
         @endauth
