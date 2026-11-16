@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/series/{series:slug}/edit', [SeriesManageController::class, 'edit'])->name('series.edit');
         Route::put('/series/{series:slug}', [SeriesManageController::class, 'update'])->name('series.update');
 
+        Route::get('/rallies/geocode', [RallyManageController::class, 'geocode'])->name('rallies.geocode');
         Route::get('/rallies/create', [RallyManageController::class, 'create'])->name('rallies.create');
         Route::post('/rallies', [RallyManageController::class, 'store'])->name('rallies.store');
         Route::get('/rallies/{rally:slug}/edit', [RallyManageController::class, 'edit'])->name('rallies.edit');

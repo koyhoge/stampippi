@@ -602,10 +602,12 @@
         submitBtn.textContent = '＋ ベニューを追加';
 
         nameInput.value = '';
-        const defaultLat = existingLocations.length > 0 ? parseFloat(existingLocations[0].latitude) : 35.681236;
-        const defaultLng = existingLocations.length > 0 ? parseFloat(existingLocations[0].longitude) : 139.767125;
-        latInput.value = defaultLat.toFixed(7);
-        lngInput.value = defaultLng.toFixed(7);
+        const lat0 = existingLocations.length > 0 ? parseFloat(existingLocations[0].latitude) : NaN;
+        const defaultLat = (!isNaN(lat0) && lat0 >= -90 && lat0 <= 90) ? lat0 : 35.681236;
+        const lng0 = existingLocations.length > 0 ? parseFloat(existingLocations[0].longitude) : NaN;
+        const defaultLng = (!isNaN(lng0) && lng0 >= -180 && lng0 <= 180) ? lng0 : 139.767125;
+        latInput.value = defaultLat.toFixed(6);
+        lngInput.value = defaultLng.toFixed(6);
         radiusInput.value = 100;
         colorInput.value = '#6366F1';
         customImageOption.classList.add('hidden');
@@ -629,10 +631,12 @@
         submitBtn.textContent = '変更を保存';
 
         nameInput.value = loc.name || '';
-        const lat = parseFloat(loc.latitude) || 35.681236;
-        const lng = parseFloat(loc.longitude) || 139.767125;
-        latInput.value = loc.latitude ?? lat;
-        lngInput.value = loc.longitude ?? lng;
+        const rawLat = parseFloat(loc.latitude);
+        const rawLng = parseFloat(loc.longitude);
+        const lat = (!isNaN(rawLat) && rawLat >= -90 && rawLat <= 90) ? rawLat : 35.681236;
+        const lng = (!isNaN(rawLng) && rawLng >= -180 && rawLng <= 180) ? rawLng : 139.767125;
+        latInput.value = lat.toFixed(6);
+        lngInput.value = lng.toFixed(6);
         radiusInput.value = loc.radius_meters || 100;
         colorInput.value = loc.stamp_color || '#6366F1';
 
@@ -672,8 +676,10 @@
     });
 
     function initPickerMap(initialLat, initialLng) {
-        const defaultLat = initialLat || parseFloat(latInput.value) || 35.681236;
-        const defaultLng = initialLng || parseFloat(lngInput.value) || 139.767125;
+        const pLat = parseFloat(initialLat ?? latInput.value);
+        const defaultLat = (!isNaN(pLat) && pLat >= -90 && pLat <= 90) ? pLat : 35.681236;
+        const pLng = parseFloat(initialLng ?? lngInput.value);
+        const defaultLng = (!isNaN(pLng) && pLng >= -180 && pLng <= 180) ? pLng : 139.767125;
 
         pickerMap = L.map('picker-map').setView([defaultLat, defaultLng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -683,8 +689,12 @@
 
         // Render all existing locations in subdued blue
         existingLocations.forEach(loc => {
-            L.marker([loc.latitude, loc.longitude]).addTo(pickerMap).bindPopup(escapeHtml(loc.name));
-            L.circle([loc.latitude, loc.longitude], { radius: loc.radius_meters, color: '#6366F1', fillOpacity: 0.12 }).addTo(pickerMap);
+            const locLat = parseFloat(loc.latitude);
+            const locLng = parseFloat(loc.longitude);
+            if (!isNaN(locLat) && !isNaN(locLng)) {
+                L.marker([locLat, locLng]).addTo(pickerMap).bindPopup(escapeHtml(loc.name));
+                L.circle([locLat, locLng], { radius: loc.radius_meters || 100, color: '#6366F1', fillOpacity: 0.12 }).addTo(pickerMap);
+            }
         });
 
         // Current target preview marker and radius in red
@@ -695,51 +705,108 @@
             fillOpacity: 0.25
         }).addTo(pickerMap);
 
-        pickerMap.on('click', function (e) {
-            latInput.value = e.latlng.lat.toFixed(6);
-            lngInput.value = e.latlng.lng.toFixed(6);
+        function normalizeLatLng(val1, val2) {
+            if (isNaN(val1) || isNaN(val2)) return null;
+            // Swap if ordered as (lon, lat) where lon > 90 and lat <= 90
+            if ((val1 > 90 || val1 < -90) && (val2 >= -90 && val2 <= 90)) {
+                return { lat: val2, lng: val1 };
+            }
+            if (val1 >= -90 && val1 <= 90 && val2 >= -180 && val2 <= 180) {
+                return { lat: val1, lng: val2 };
+            }
+            return null;
+        }
+
+        function parseCoordinates(text) {
+            if (!text || typeof text !== 'string') return null;
+            text = text.trim();
+
+            // 1. Google Maps URL pattern: /@35.681236,139.767125 or ?q=35.681236,139.767125 or ll=35.681236,139.767125
+            const urlMatch = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/) ||
+                             text.match(/[?&](?:q|ll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+            if (urlMatch) {
+                return normalizeLatLng(parseFloat(urlMatch[1]), parseFloat(urlMatch[2]));
+            }
+
+            // 2. Direct coordinate pairs: "lat, lng" or "lat、lng" or "lat lng" (brackets stripped)
+            const cleaned = text.replace(/^[(\[]|[)\]]$/g, '').trim();
+            const parts = cleaned.split(/[,、\s\t]+/).filter(Boolean);
+            if (parts.length >= 2) {
+                const p0 = parseFloat(parts[0]);
+                const p1 = parseFloat(parts[1]);
+                if (!isNaN(p0) && !isNaN(p1)) {
+                    return normalizeLatLng(p0, p1);
+                }
+            }
+            return null;
+        }
+
+        function applyLocationResult(lat, lng, label) {
+            const numLat = parseFloat(lat);
+            const numLng = parseFloat(lng);
+            if (isNaN(numLat) || isNaN(numLng) || numLat < -90 || numLat > 90 || numLng < -180 || numLng > 180) {
+                console.warn('Invalid coordinates in applyLocationResult:', lat, lng);
+                return;
+            }
+            latInput.value = numLat.toFixed(6);
+            lngInput.value = numLng.toFixed(6);
             syncPreview();
+            if (pickerMap) {
+                pickerMap.setView([numLat, numLng], 16);
+            }
+            if (previewMarker && label) {
+                previewMarker.bindPopup(escapeHtml(label)).openPopup();
+            }
+        }
+
+        pickerMap.on('click', function (e) {
+            applyLocationResult(e.latlng.lat, e.latlng.lng, 'マップクリック位置');
         });
 
         latInput.addEventListener('input', syncPreview);
         lngInput.addEventListener('input', syncPreview);
         if (radiusInput) radiusInput.addEventListener('input', syncPreview);
 
-        // Allow pasting Google Maps "lat, lng" coordinates directly into either field
+        // Allow pasting coordinates or Google Maps URLs into either coordinate field or search box
         function handleCoordinatePaste(e) {
             const text = (e.clipboardData || window.clipboardData)?.getData('text');
-            if (text && text.includes(',')) {
-                const parts = text.split(',').map(s => s.trim());
-                if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                    e.preventDefault();
-                    latInput.value = parseFloat(parts[0]).toFixed(6);
-                    lngInput.value = parseFloat(parts[1]).toFixed(6);
-                    syncPreview();
-                    if (pickerMap) {
-                        pickerMap.setView([parseFloat(parts[0]), parseFloat(parts[1])], 16);
-                    }
-                }
+            const coords = parseCoordinates(text);
+            if (coords) {
+                e.preventDefault();
+                applyLocationResult(coords.lat, coords.lng, `指定座標 (${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`);
             }
         }
         latInput.addEventListener('paste', handleCoordinatePaste);
         lngInput.addEventListener('paste', handleCoordinatePaste);
 
-        // Address / Place Search via OpenStreetMap Nominatim + GSI Fallback
+        function handleCoordinateChange(e) {
+            const coords = parseCoordinates(e.target.value);
+            if (coords) {
+                applyLocationResult(coords.lat, coords.lng, `指定座標 (${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`);
+            }
+        }
+        latInput.addEventListener('change', handleCoordinateChange);
+        lngInput.addEventListener('change', handleCoordinateChange);
+
+        // Address / Place Search
         const searchInput = document.getElementById('address-search-input');
         const searchBtn = document.getElementById('address-search-btn');
         const searchResults = document.getElementById('address-search-results');
 
-        function applyLocationResult(lat, lng, label) {
-            latInput.value = Number(lat).toFixed(6);
-            lngInput.value = Number(lng).toFixed(6);
-            syncPreview();
-            pickerMap.setView([lat, lng], 16);
-            previewMarker.bindPopup(escapeHtml(label)).openPopup();
-        }
+        if (searchInput) searchInput.addEventListener('paste', handleCoordinatePaste);
 
         async function searchAddress() {
             const query = searchInput.value.trim();
             if (!query) return;
+
+            // Direct coordinate check first
+            const directCoords = parseCoordinates(query);
+            if (directCoords) {
+                applyLocationResult(directCoords.lat, directCoords.lng, `指定座標 (${directCoords.lat.toFixed(6)}, ${directCoords.lng.toFixed(6)})`);
+                searchResults.classList.remove('hidden');
+                searchResults.innerHTML = `<div class="p-2.5 text-emerald-700 font-semibold bg-emerald-50 rounded-lg">📍 座標を適用しました (${directCoords.lat.toFixed(6)}, ${directCoords.lng.toFixed(6)})</div>`;
+                return;
+            }
 
             searchBtn.disabled = true;
             searchBtn.textContent = '検索中...';
@@ -747,27 +814,52 @@
             searchResults.innerHTML = '<div class="p-2.5 text-slate-500">検索しています...</div>';
 
             try {
-                const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=ja&limit=5&q=${encodeURIComponent(query)}`;
-                const res = await fetch(nominatimUrl, {
-                    headers: { 'Accept': 'application/json' }
-                });
-                let items = await res.json();
+                let items = [];
 
-                // Fallback to GSI (国土地理院) AddressSearch if Nominatim returns no results
-                if (!items || items.length === 0) {
-                    const gsiUrl = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`;
-                    const gsiRes = await fetch(gsiUrl);
-                    const gsiItems = await gsiRes.json();
-                    if (Array.isArray(gsiItems)) {
-                        items = gsiItems.slice(0, 5).map(g => ({
-                            lat: g.geometry.coordinates[1],
-                            lon: g.geometry.coordinates[0],
-                            display_name: g.properties.title
-                        }));
+                // 1. Backend geocoding proxy (with User-Agent & server cache)
+                try {
+                    const geocodeUrl = `{{ route('my.rallies.geocode') }}?q=${encodeURIComponent(query)}`;
+                    const res = await fetch(geocodeUrl, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (res.ok) {
+                        items = await res.json();
+                    }
+                } catch (beErr) {
+                    console.warn('Backend geocode failed, trying client-side GSI fallback:', beErr);
+                }
+
+                // 2. Client-side GSI fallback if backend proxy returned empty or failed
+                if (!Array.isArray(items) || items.length === 0) {
+                    try {
+                        const gsiUrl = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(query)}`;
+                        const gsiRes = await fetch(gsiUrl);
+                        if (gsiRes.ok) {
+                            const gsiItems = await gsiRes.json();
+                            if (Array.isArray(gsiItems)) {
+                                items = gsiItems.slice(0, 5).map(g => {
+                                    const coords = g?.geometry?.coordinates;
+                                    if (Array.isArray(coords) && coords.length >= 2) {
+                                        const lon = parseFloat(coords[0]);
+                                        const lat = parseFloat(coords[1]);
+                                        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                                            return {
+                                                lat: lat,
+                                                lng: lon,
+                                                display_name: g?.properties?.title || `${lat}, ${lon}`
+                                            };
+                                        }
+                                    }
+                                    return null;
+                                }).filter(Boolean);
+                            }
+                        }
+                    } catch (gsiErr) {
+                        console.warn('GSI fallback failed:', gsiErr);
                     }
                 }
 
-                if (!items || items.length === 0) {
+                if (!Array.isArray(items) || items.length === 0) {
                     searchResults.innerHTML = '<div class="p-2.5 text-rose-600">該当する場所が見つかりませんでした。別のキーワードや市区町村名でお試しください。</div>';
                     return;
                 }
@@ -775,7 +867,9 @@
                 searchResults.innerHTML = '';
                 items.forEach((item, idx) => {
                     const lat = parseFloat(item.lat);
-                    const lng = parseFloat(item.lon);
+                    const lng = parseFloat(item.lng || item.lon);
+                    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'w-full text-left px-3 py-2 hover:bg-indigo-50 transition flex items-center justify-between gap-2';
@@ -800,9 +894,30 @@
         if (searchBtn && searchInput) {
             searchBtn.addEventListener('click', searchAddress);
             searchInput.addEventListener('keydown', function (e) {
+                if (e.isComposing) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     searchAddress();
+                }
+            });
+        }
+
+        // Validate coordinates before submitting venue form
+        if (venueForm) {
+            venueForm.addEventListener('submit', function (e) {
+                const lat = parseFloat(latInput.value);
+                const lng = parseFloat(lngInput.value);
+                if (isNaN(lat) || latInput.value.trim() === '' || lat < -90 || lat > 90) {
+                    e.preventDefault();
+                    alert('有効な緯度（-90〜90の数値）を入力してください。地図をクリックするか住所・施設名で検索して位置を設定できます。');
+                    latInput.focus();
+                    return false;
+                }
+                if (isNaN(lng) || lngInput.value.trim() === '' || lng < -180 || lng > 180) {
+                    e.preventDefault();
+                    alert('有効な経度（-180〜180の数値）を入力してください。地図をクリックするか住所・施設名で検索して位置を設定できます。');
+                    lngInput.focus();
+                    return false;
                 }
             });
         }

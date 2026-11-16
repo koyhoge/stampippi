@@ -7,8 +7,11 @@ use App\Models\RallySeries;
 use App\Models\StampLocation;
 use App\Models\StampRally;
 use App\Services\StampStorage\StampImageStorageManager;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -430,5 +433,117 @@ class RallyManageController extends Controller
 
         return redirect()->route('my.rallies.edit', $rally)
             ->with('status', "過去ロケーション「{$source->name}」からベニュー情報をコピーして追加しました！");
+    }
+
+    public function geocode(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->input('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        // Direct coordinate check (lat, lng or Google Maps @lat,lng format)
+        if (preg_match('/@?(-?\d+(?:\.\d+)?)[,\s、\t]+(-?\d+(?:\.\d+)?)/u', $query, $matches)) {
+            $val1 = (float) $matches[1];
+            $val2 = (float) $matches[2];
+
+            if (($val1 > 90 || $val1 < -90) && ($val2 >= -90 && $val2 <= 90)) {
+                $lat = $val2;
+                $lng = $val1;
+            } elseif ($val1 >= -90 && $val1 <= 90 && ($val2 >= -180 && $val2 <= 180)) {
+                $lat = $val1;
+                $lng = $val2;
+            } else {
+                $lat = null;
+                $lng = null;
+            }
+
+            if ($lat !== null && $lng !== null) {
+                return response()->json([
+                    [
+                        'lat' => round($lat, 6),
+                        'lng' => round($lng, 6),
+                        'display_name' => "指定座標: {$lat}, {$lng}",
+                    ],
+                ]);
+            }
+        }
+
+        $cacheKey = 'geocode:' . md5($query);
+        $results = Cache::remember($cacheKey, 86400, function () use ($query) {
+            $items = [];
+
+            // 1. Try Nominatim with appropriate User-Agent
+            try {
+                $osmUrl = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+                    'format' => 'json',
+                    'accept-language' => 'ja',
+                    'limit' => 5,
+                    'q' => $query,
+                ]);
+
+                $response = Http::withHeaders([
+                    'User-Agent' => 'Stampippi/1.0 (' . config('app.url', 'https://stampippi.net') . ')',
+                    'Accept' => 'application/json',
+                ])->timeout(3)->get($osmUrl);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    if (is_array($json)) {
+                        foreach ($json as $row) {
+                            if (isset($row['lat'], $row['lon']) && is_numeric($row['lat']) && is_numeric($row['lon'])) {
+                                $lat = (float) $row['lat'];
+                                $lng = (float) $row['lon'];
+                                if ($lat >= -90 && $lat <= 90 && $lng >= -180 && $lng <= 180) {
+                                    $items[] = [
+                                        'lat' => round($lat, 6),
+                                        'lng' => round($lng, 6),
+                                        'display_name' => (string) ($row['display_name'] ?? "{$lat}, {$lng}"),
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback to GSI
+            }
+
+            // 2. Try GSI if no items found
+            if (empty($items)) {
+                try {
+                    $gsiUrl = 'https://msearch.gsi.go.jp/address-search/AddressSearch?' . http_build_query([
+                        'q' => $query,
+                    ]);
+
+                    $response = Http::timeout(3)->get($gsiUrl);
+                    if ($response->successful()) {
+                        $json = $response->json();
+                        if (is_array($json)) {
+                            foreach (array_slice($json, 0, 5) as $row) {
+                                $coords = $row['geometry']['coordinates'] ?? null;
+                                if (is_array($coords) && count($coords) >= 2 && is_numeric($coords[0]) && is_numeric($coords[1])) {
+                                    $lng = (float) $coords[0];
+                                    $lat = (float) $coords[1];
+                                    if ($lat >= -90 && $lat <= 90 && $lng >= -180 && $lng <= 180) {
+                                        $items[] = [
+                                            'lat' => round($lat, 6),
+                                            'lng' => round($lng, 6),
+                                            'display_name' => (string) ($row['properties']['title'] ?? "{$lat}, {$lng}"),
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore GSI errors
+                }
+            }
+
+            return $items;
+        });
+
+        return response()->json($results);
     }
 }
