@@ -273,9 +273,8 @@
 
                         <!-- Location Checkin Visitors / Icons -->
                         @php
-                            $locStamps = $locationStampsGrouped->get($location->id, collect());
-                            $locStampsCount = $locStamps->count();
-                            $locRecentUsers = $locStamps->pluck('user')->filter()->unique('id')->take(8);
+                            $locStampsCount = $locationCheckinCounts->get($location->id, 0);
+                            $locRecentUsers = $locationRecentUsers->get($location->id, collect());
                         @endphp
                         <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px] text-slate-500">
                             <span class="font-semibold flex items-center gap-1 shrink-0">

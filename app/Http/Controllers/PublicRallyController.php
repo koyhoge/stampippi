@@ -135,11 +135,23 @@ class PublicRallyController extends Controller
                 ->values();
         }
 
-        $locationStampsGrouped = UserStamp::where('stamp_rally_id', $rally->id)
-            ->with('user')
-            ->latest('stamped_at')
-            ->get()
-            ->groupBy('stamp_location_id');
+        $locationCheckinCounts = UserStamp::where('stamp_rally_id', $rally->id)
+            ->selectRaw('stamp_location_id, count(*) as total')
+            ->groupBy('stamp_location_id')
+            ->pluck('total', 'stamp_location_id');
+
+        $locationRecentUsers = collect();
+        if ($rally->showsParticipantIcons()) {
+            $locationRecentUsers = UserStamp::where('stamp_rally_id', $rally->id)
+                ->with('user')
+                ->latest('stamped_at')
+                ->limit(200)
+                ->get()
+                ->groupBy('stamp_location_id')
+                ->map(function ($stamps) {
+                    return $stamps->pluck('user')->filter()->unique('id')->take(8)->values();
+                });
+        }
 
         return view('public.rally', compact(
             'rally',
@@ -148,7 +160,8 @@ class PublicRallyController extends Controller
             'mapLocations',
             'totalParticipantsCount',
             'recentParticipants',
-            'locationStampsGrouped'
+            'locationCheckinCounts',
+            'locationRecentUsers'
         ));
     }
 

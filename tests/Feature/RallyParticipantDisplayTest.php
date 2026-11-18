@@ -312,4 +312,84 @@ class RallyParticipantDisplayTest extends TestCase
 
         $this->assertEquals('count_only', $rally->fresh()->participant_display_mode);
     }
+
+    public function test_location_checkins_aggregation_and_recent_icons_limit(): void
+    {
+        $creator = User::create([
+            'handle' => 'creator6',
+            'name' => 'Creator Six',
+            'email' => 'creator6@example.com',
+            'password' => 'password',
+        ]);
+
+        $rally = StampRally::create([
+            'title' => 'Many Checkins Rally',
+            'slug' => 'many-checkins-rally',
+            'creator_id' => $creator->id,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+            'participant_display_mode' => 'icons',
+        ]);
+
+        $loc = StampLocation::create([
+            'stamp_rally_id' => $rally->id,
+            'name' => 'Popular Spot',
+            'latitude' => 35.681236,
+            'longitude' => 139.767125,
+            'radius_meters' => 100,
+        ]);
+
+        // Create 10 users and have them check in at different times
+        $users = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $user = User::create([
+                'handle' => "runner{$i}",
+                'name' => "Runner {$i}",
+                'email' => "runner{$i}@example.com",
+                'password' => 'password',
+            ]);
+            $users[] = $user;
+
+            RallyParticipation::create([
+                'user_id' => $user->id,
+                'stamp_rally_id' => $rally->id,
+                'joined_at' => now()->subMinutes(100 - $i),
+            ]);
+
+            UserStamp::create([
+                'user_id' => $user->id,
+                'stamp_rally_id' => $rally->id,
+                'stamp_location_id' => $loc->id,
+                'checkin_lat' => 35.681236,
+                'checkin_lng' => 139.767125,
+                'distance_meters' => 5,
+                'stamped_at' => now()->subMinutes(100 - $i),
+            ]);
+        }
+
+        $response = $this->get('/rallies/' . $rally->slug);
+        $response->assertStatus(200);
+
+        // Location shows total count aggregated from SQL
+        $response->assertSee('10人がチェックイン');
+
+        // Shows +2 more indicator (10 - 8 = 2)
+        $response->assertSee('+2');
+
+        // Verify viewData locationCheckinCounts and locationRecentUsers
+        $counts = $response->viewData('locationCheckinCounts');
+        $this->assertSame(10, $counts->get($loc->id));
+
+        $recentUsers = $response->viewData('locationRecentUsers')->get($loc->id);
+        $this->assertCount(8, $recentUsers);
+
+        // Most recent 8 runners (runners 3 through 10) are included
+        for ($i = 3; $i <= 10; $i++) {
+            $this->assertTrue($recentUsers->pluck('handle')->contains("runner{$i}"));
+        }
+
+        // Oldest 2 runners (runner 1 and 2) are excluded from the 8 icons
+        $this->assertFalse($recentUsers->pluck('handle')->contains('runner1'));
+        $this->assertFalse($recentUsers->pluck('handle')->contains('runner2'));
+    }
 }
