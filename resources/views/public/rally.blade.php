@@ -9,15 +9,20 @@
             $cel = session('checkin_celebration');
             $isComplete = !empty($cel['is_completed']);
             $locName = $cel['location_name'] ?? 'ベニュー';
-            $locHashtag = !empty($cel['location_hashtag']) ? ' ' . $cel['location_hashtag'] : '';
+            $locHashtag = $cel['location_hashtag'] ?? null;
+            $combinedTags = array_filter(array_unique([
+                $rally->hashtag,
+                $locHashtag,
+            ]));
+            $tagSuffix = !empty($combinedTags) ? "\n" . implode(' ', $combinedTags) : '';
             $rallyUrl = route('rallies.show', $rally);
             if ($isComplete) {
                 $shareTitle = "🎉 スタンプラリー「{$rally->title}」をコンプリートしました！";
-                $shareText = "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー{$locHashtag}";
+                $shareText = "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨{$tagSuffix}";
                 $shareUrl = route('rallies.certificate', $rally);
             } else {
                 $shareTitle = "💮 「{$locName}」でスタンプを獲得！";
-                $shareText = "スタンプラリー「{$rally->title}」の「{$locName}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー{$locHashtag}";
+                $shareText = "スタンプラリー「{$rally->title}」の「{$locName}」でスタンプを押しました！💮{$tagSuffix}";
                 $shareUrl = $rallyUrl;
             }
         @endphp
@@ -90,6 +95,11 @@
                 <span class="font-semibold px-2.5 py-1 rounded-full {{ $rally->isCurrentlyActive() ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
                     📅 {{ $rally->periodLabel() }}
                 </span>
+                @if ($rally->hashtag)
+                    <span class="font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+                        {{ $rally->hashtag }}
+                    </span>
+                @endif
             </div>
 
             @auth
@@ -137,9 +147,12 @@
                             <a href="{{ route('rallies.certificate', $rally) }}" class="inline-flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow transition">
                                 🏆 達成証を見る
                             </a>
+                            @php
+                                $headerCompleteTags = $rally->hashtag ? "\n" . $rally->hashtag : '';
+                            @endphp
                             @include('partials.sns-share', [
                                 'title' => "🎉 「{$rally->title}」をコンプリート！",
-                                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー",
+                                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨{$headerCompleteTags}",
                                 'url' => route('rallies.certificate', $rally),
                                 'size' => 'sm',
                             ])
@@ -311,11 +324,18 @@
                                         <img src="{{ asset('favicon.svg') }}" alt="" class="w-4 h-4 rounded-xs shrink-0">
                                         <span>スタンプ獲得済み ({{ $stamp->stamped_at->format('Y/m/d H:i') }})</span>
                                     </div>
+                                    @php
+                                        $locCombinedTags = array_filter(array_unique([
+                                            $rally->hashtag,
+                                            $location->hashtag,
+                                        ]));
+                                        $locTagSuffix = !empty($locCombinedTags) ? "\n" . implode(' ', $locCombinedTags) : '';
+                                    @endphp
                                     <div class="flex items-center justify-between gap-1 text-[11px] text-slate-500 pt-0.5">
                                         <span>獲得をシェア:</span>
                                         @include('partials.sns-share', [
                                             'title' => "「{$location->name}」でスタンプ獲得！",
-                                            'text' => "スタンプラリー「{$rally->title}」の「{$location->name}」でスタンプを押しました！💮\n#Stampippi #スタンプラリー",
+                                            'text' => "スタンプラリー「{$rally->title}」の「{$location->name}」でスタンプを押しました！💮{$locTagSuffix}",
                                             'url' => route('rallies.show', $rally),
                                             'size' => 'xs',
                                         ])

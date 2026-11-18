@@ -44,9 +44,12 @@
 
         <div class="pt-4 pb-1 border-t border-slate-200/80 flex flex-col items-center justify-center gap-2">
             <span class="text-xs font-bold text-slate-700">🏆 快挙をSNSでシェアしよう！</span>
+            @php
+                $certTagSuffix = $rally->hashtag ? "\n" . $rally->hashtag : '';
+            @endphp
             @include('partials.sns-share', [
                 'title' => "🏆 「{$rally->title}」コンプリート達成証！",
-                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨\n#Stampippi #スタンプラリー #コンプリート",
+                'text' => "🎉 スタンプラリー「{$rally->title}」をコンプリート達成しました！🏆✨{$certTagSuffix}",
                 'url' => route('rallies.certificate', $rally),
                 'size' => 'md',
             ])

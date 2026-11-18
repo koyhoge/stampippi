@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,7 @@ class StampRally extends Model
         'slug',
         'title',
         'description',
+        'hashtag',
         'cover_image_path',
         'visibility',
         'participant_display_mode',
@@ -28,6 +30,47 @@ class StampRally extends Model
         'ends_at',
         'sort_order',
     ];
+
+    protected function hashtag(): Attribute
+    {
+        return Attribute::make(
+            set: function (?string $value) {
+                if ($value === null) {
+                    return null;
+                }
+                $value = trim($value);
+                if ($value === '') {
+                    return null;
+                }
+                $trimmed = ltrim($value, '#＃');
+                return $trimmed !== '' ? '#' . $trimmed : null;
+            }
+        );
+    }
+
+    public function hashtags(?StampLocation $location = null): array
+    {
+        $tags = array_filter(array_unique([
+            $this->hashtag,
+            $location?->hashtag,
+        ]));
+
+        return array_values($tags);
+    }
+
+    public function shareHashtagString(?StampLocation $location = null): string
+    {
+        $tags = $this->hashtags($location);
+
+        return ! empty($tags) ? implode(' ', $tags) : '';
+    }
+
+    public function formatShareText(string $message, ?StampLocation $location = null): string
+    {
+        $tagStr = $this->shareHashtagString($location);
+
+        return $tagStr !== '' ? "{$message}\n{$tagStr}" : $message;
+    }
 
     protected function casts(): array
     {

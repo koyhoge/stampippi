@@ -118,6 +118,16 @@
                 <textarea name="description" rows="2" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">{{ old('description', $rally->description) }}</textarea>
             </div>
 
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    ラリー共通SNSハッシュタグ (任意)
+                </label>
+                <input type="text" name="hashtag" value="{{ old('hashtag', $rally->hashtag) }}" placeholder="例: #phpcon2026" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm font-mono">
+                <p class="text-[11px] text-slate-500 mt-1">
+                    SNSシェア時の投稿文面に自動で追加されます（#は省略可）。ベニューにもハッシュタグがある場合は両方が付加されます。
+                </p>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">公開ステータス</label>
@@ -473,7 +483,7 @@
                                             SNSハッシュタグ (任意)
                                         </label>
                                         <input type="text" id="venue-hashtag" name="hashtag" placeholder="例: #phpcon2026_tokyo" class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-mono">
-                                        <p class="text-[10px] text-slate-500 mt-0.5">チェックイン時のSNSシェア文面に自動で追加されます（#は省略可）</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">チェックイン時のSNSシェア文面に自動で追加されます（#は省略可）。ラリー共通タグがある場合は両方が付加されます。</p>
                                     </div>
                                 </div>
 

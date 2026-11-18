@@ -180,6 +180,8 @@ class VenueHashtagTest extends TestCase
         // Following redirect renders celebration banner with the custom hashtag
         $followed = $this->actingAs($player)->get(route('rallies.show', $rally));
         $followed->assertStatus(200)
-            ->assertSee('#phpcon2026_pio');
+            ->assertSee('#phpcon2026_pio')
+            ->assertDontSee('#Stampippi')
+            ->assertDontSee('%23Stampippi');
     }
 }

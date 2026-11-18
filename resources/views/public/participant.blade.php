@@ -49,11 +49,14 @@
                         <span>進行中</span>
                     </div>
                 @endif
+                @php
+                    $partTagSuffix = $rally->hashtag ? "\n" . $rally->hashtag : '';
+                @endphp
                 @include('partials.sns-share', [
                     'title' => "{$user->name} さんの参加状況 | {$rally->title}",
                     'text' => $participation->completed_at
-                        ? "🎉 「{$rally->title}」をコンプリート達成しました！🏆\n#Stampippi #スタンプラリー"
-                        : "スタンプラリー「{$rally->title}」に参加中！💮\n#Stampippi #スタンプラリー",
+                        ? "🎉 「{$rally->title}」をコンプリート達成しました！🏆{$partTagSuffix}"
+                        : "スタンプラリー「{$rally->title}」に参加中！💮{$partTagSuffix}",
                     'url' => route('rallies.participants.show', [$rally, $user]),
                     'size' => 'xs',
                 ])
