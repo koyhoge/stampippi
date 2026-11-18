@@ -8,6 +8,7 @@ use App\Models\StampRally;
 use App\Models\User;
 use App\Models\UserStamp;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Location\Coordinate;
 use Location\Distance\Haversine;
@@ -146,6 +147,8 @@ class StampCheckinService
                     'is_rally_completed' => $this->isCompleted($user, $rally),
                 ];
             }
+
+            Cache::forget("rally:{$rally->id}:stamp-counts");
 
             $stampedCount = UserStamp::where('user_id', $user->id)
                 ->where('stamp_rally_id', $rally->id)

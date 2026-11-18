@@ -8,6 +8,7 @@ use App\Models\StampRally;
 use App\Models\User;
 use App\Models\UserStamp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class RallyParticipantDisplayTest extends TestCase
@@ -391,5 +392,67 @@ class RallyParticipantDisplayTest extends TestCase
         // Oldest 2 runners (runner 1 and 2) are excluded from the 8 icons
         $this->assertFalse($recentUsers->pluck('handle')->contains('runner1'));
         $this->assertFalse($recentUsers->pluck('handle')->contains('runner2'));
+    }
+
+    public function test_location_checkin_counts_are_cached_and_invalidated_on_checkin(): void
+    {
+        $creator = User::create([
+            'handle' => 'creator7',
+            'name' => 'Creator Seven',
+            'email' => 'creator7@example.com',
+            'password' => 'password',
+        ]);
+
+        $rally = StampRally::create([
+            'title' => 'Cache Test Rally',
+            'slug' => 'cache-test-rally',
+            'creator_id' => $creator->id,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+            'participant_display_mode' => 'icons',
+        ]);
+
+        $loc = StampLocation::create([
+            'stamp_rally_id' => $rally->id,
+            'name' => 'Cache Spot',
+            'latitude' => 35.681236,
+            'longitude' => 139.767125,
+            'radius_meters' => 100,
+        ]);
+
+        $cacheKey = "rally:{$rally->id}:stamp-counts";
+        Cache::forget($cacheKey);
+
+        // First access caches the result (0)
+        $this->get('/rallies/' . $rally->slug)->assertStatus(200);
+        $this->assertTrue(Cache::has($cacheKey));
+        $this->assertSame(0, Cache::get($cacheKey)->get($loc->id, 0));
+
+        $player = User::create([
+            'handle' => 'player1',
+            'name' => 'Player One',
+            'email' => 'player1@example.com',
+            'password' => 'password',
+        ]);
+
+        // When cache is present, showRally still reads the cached value
+        $this->get('/rallies/' . $rally->slug)->assertStatus(200);
+        $this->assertSame(0, Cache::get($cacheKey)->get($loc->id, 0));
+
+        // Now player checks in via checkin endpoint
+        $this->actingAs($player)
+            ->post("/rallies/{$rally->slug}/locations/{$loc->id}/checkin", [
+                'latitude' => 35.681236,
+                'longitude' => 139.767125,
+            ])
+            ->assertRedirect();
+
+        // Cache was forgotten on checkin!
+        $this->assertFalse(Cache::has($cacheKey));
+
+        // Accessing showRally recaches with updated count (1)
+        $this->get('/rallies/' . $rally->slug)->assertStatus(200);
+        $this->assertTrue(Cache::has($cacheKey));
+        $this->assertSame(1, Cache::get($cacheKey)->get($loc->id));
     }
 }

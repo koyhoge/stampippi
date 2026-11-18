@@ -13,6 +13,7 @@ use App\Services\StampCheckinService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class PublicRallyController extends Controller
@@ -135,10 +136,12 @@ class PublicRallyController extends Controller
                 ->values();
         }
 
-        $locationCheckinCounts = UserStamp::where('stamp_rally_id', $rally->id)
-            ->selectRaw('stamp_location_id, count(*) as total')
-            ->groupBy('stamp_location_id')
-            ->pluck('total', 'stamp_location_id');
+        $locationCheckinCounts = Cache::remember("rally:{$rally->id}:stamp-counts", 60, function () use ($rally) {
+            return UserStamp::where('stamp_rally_id', $rally->id)
+                ->selectRaw('stamp_location_id, count(*) as total')
+                ->groupBy('stamp_location_id')
+                ->pluck('total', 'stamp_location_id');
+        });
 
         $locationRecentUsers = collect();
         if ($rally->showsParticipantIcons()) {
@@ -244,6 +247,10 @@ class PublicRallyController extends Controller
             (float) $validated['longitude'],
             isset($validated['accuracy']) ? (float) $validated['accuracy'] : null
         );
+
+        if ($result['success']) {
+            Cache::forget("rally:{$rally->id}:stamp-counts");
+        }
 
         if ($request->expectsJson()) {
             return response()->json($result, $result['success'] ? 200 : 422);
