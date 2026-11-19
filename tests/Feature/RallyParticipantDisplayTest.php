@@ -340,16 +340,14 @@ class RallyParticipantDisplayTest extends TestCase
             'radius_meters' => 100,
         ]);
 
-        // Create 10 users and have them check in at different times
-        $users = [];
-        for ($i = 1; $i <= 10; $i++) {
+        // Create 15 users and have them check in at different times
+        for ($i = 1; $i <= 15; $i++) {
             $user = User::create([
                 'handle' => "runner{$i}",
                 'name' => "Runner {$i}",
                 'email' => "runner{$i}@example.com",
                 'password' => 'password',
             ]);
-            $users[] = $user;
 
             RallyParticipation::create([
                 'user_id' => $user->id,
@@ -372,26 +370,178 @@ class RallyParticipantDisplayTest extends TestCase
         $response->assertStatus(200);
 
         // Location shows total count aggregated from SQL
-        $response->assertSee('10人がチェックイン');
+        $response->assertSee('15人がチェックイン');
 
-        // Shows +2 more indicator (10 - 8 = 2)
-        $response->assertSee('+2');
+        // Shows load-more button for remaining 5 users (15 - 10 = 5)
+        $response->assertSee('+5人');
+        $response->assertDontSee('+5人表示');
 
-        // Verify viewData locationCheckinCounts and locationRecentUsers
+        // Verify viewData locationCheckinCounts, recentParticipants, and locationRecentUsers
         $counts = $response->viewData('locationCheckinCounts');
-        $this->assertSame(10, $counts->get($loc->id));
+        $this->assertSame(15, $counts->get($loc->id));
+
+        $recentParticipants = $response->viewData('recentParticipants');
+        $this->assertCount(10, $recentParticipants);
 
         $recentUsers = $response->viewData('locationRecentUsers')->get($loc->id);
-        $this->assertCount(8, $recentUsers);
+        $this->assertCount(10, $recentUsers);
 
-        // Most recent 8 runners (runners 3 through 10) are included
-        for ($i = 3; $i <= 10; $i++) {
+        // Most recent 10 runners (runners 6 through 15) are included
+        for ($i = 6; $i <= 15; $i++) {
+            $this->assertTrue($recentParticipants->pluck('handle')->contains("runner{$i}"));
             $this->assertTrue($recentUsers->pluck('handle')->contains("runner{$i}"));
         }
 
-        // Oldest 2 runners (runner 1 and 2) are excluded from the 8 icons
-        $this->assertFalse($recentUsers->pluck('handle')->contains('runner1'));
-        $this->assertFalse($recentUsers->pluck('handle')->contains('runner2'));
+        // Oldest 5 runners (runner 1 through 5) are excluded from the initial 10 icons
+        for ($i = 1; $i <= 5; $i++) {
+            $this->assertFalse($recentParticipants->pluck('handle')->contains("runner{$i}"));
+            $this->assertFalse($recentUsers->pluck('handle')->contains("runner{$i}"));
+        }
+    }
+
+    public function test_participants_and_location_checkins_pagination_endpoints(): void
+    {
+        $creator = User::create([
+            'handle' => 'creator_page',
+            'name' => 'Creator Page',
+            'email' => 'creator_page@example.com',
+            'password' => 'password',
+        ]);
+
+        $rally = StampRally::create([
+            'title' => 'Paginated Rally',
+            'slug' => 'paginated-rally',
+            'creator_id' => $creator->id,
+            'visibility' => 'public',
+            'completion_condition' => 'all',
+            'participant_display_mode' => 'icons',
+        ]);
+
+        $loc = StampLocation::create([
+            'stamp_rally_id' => $rally->id,
+            'name' => 'Busy Venue',
+            'latitude' => 35.681236,
+            'longitude' => 139.767125,
+            'radius_meters' => 100,
+        ]);
+
+        for ($i = 1; $i <= 25; $i++) {
+            $user = User::create([
+                'handle' => "walker{$i}",
+                'name' => "Walker {$i}",
+                'email' => "walker{$i}@example.com",
+                'password' => 'password',
+            ]);
+
+            RallyParticipation::create([
+                'user_id' => $user->id,
+                'stamp_rally_id' => $rally->id,
+                'joined_at' => now()->subMinutes(100 - $i),
+            ]);
+
+            UserStamp::create([
+                'user_id' => $user->id,
+                'stamp_rally_id' => $rally->id,
+                'stamp_location_id' => $loc->id,
+                'checkin_lat' => 35.681236,
+                'checkin_lng' => 139.767125,
+                'distance_meters' => 5,
+                'stamped_at' => now()->subMinutes(100 - $i),
+            ]);
+        }
+
+        // Initial page shows compact +10人 button without extra remaining suffix
+        $page = $this->get('/rallies/' . $rally->slug);
+        $page->assertStatus(200);
+        $page->assertSee('+10人');
+        $page->assertDontSee('+10人表示');
+        $page->assertDontSee('(残り15)');
+        $page->assertDontSee('(残15)');
+
+        // Rally participants batch 2 (offset=10, limit=10 -> walkers 15 down to 6)
+        $pBatch2 = $this->getJson("/rallies/{$rally->slug}/participants?offset=10&limit=10");
+        $pBatch2->assertOk()
+            ->assertJsonPath('total', 25)
+            ->assertJsonPath('next_offset', 20)
+            ->assertJsonPath('remaining', 5)
+            ->assertJsonPath('has_more', true)
+            ->assertJsonCount(10, 'users');
+        $this->assertSame('walker15', $pBatch2->json('users.0.handle'));
+        $this->assertSame('walker6', $pBatch2->json('users.9.handle'));
+
+        // Rally participants batch 3 (offset=20, limit=10 -> walkers 5 down to 1)
+        $pBatch3 = $this->getJson("/rallies/{$rally->slug}/participants?offset=20&limit=10");
+        $pBatch3->assertOk()
+            ->assertJsonPath('total', 25)
+            ->assertJsonPath('next_offset', 25)
+            ->assertJsonPath('remaining', 0)
+            ->assertJsonPath('has_more', false)
+            ->assertJsonCount(5, 'users');
+        $this->assertSame('walker5', $pBatch3->json('users.0.handle'));
+        $this->assertSame('walker1', $pBatch3->json('users.4.handle'));
+
+        // Location checkins batch 2 (offset=10, limit=10 -> walkers 15 down to 6)
+        $cBatch2 = $this->getJson("/rallies/{$rally->slug}/locations/{$loc->id}/checkins?offset=10&limit=10");
+        $cBatch2->assertOk()
+            ->assertJsonPath('total', 25)
+            ->assertJsonPath('next_offset', 20)
+            ->assertJsonPath('remaining', 5)
+            ->assertJsonPath('has_more', true)
+            ->assertJsonCount(10, 'users');
+        $this->assertSame('walker15', $cBatch2->json('users.0.handle'));
+        $this->assertSame('walker6', $cBatch2->json('users.9.handle'));
+
+        // Location checkins batch 3 (offset=20, limit=10 -> walkers 5 down to 1)
+        $cBatch3 = $this->getJson("/rallies/{$rally->slug}/locations/{$loc->id}/checkins?offset=20&limit=10");
+        $cBatch3->assertOk()
+            ->assertJsonPath('total', 25)
+            ->assertJsonPath('next_offset', 25)
+            ->assertJsonPath('remaining', 0)
+            ->assertJsonPath('has_more', false)
+            ->assertJsonCount(5, 'users');
+        $this->assertSame('walker5', $cBatch3->json('users.0.handle'));
+        $this->assertSame('walker1', $cBatch3->json('users.4.handle'));
+    }
+
+    public function test_pagination_endpoints_respect_privacy_and_ownership(): void
+    {
+        $creator = User::create([
+            'handle' => 'creator_priv',
+            'name' => 'Creator Priv',
+            'email' => 'creator_priv@example.com',
+            'password' => 'password',
+        ]);
+
+        $countOnlyRally = StampRally::create([
+            'title' => 'Private Icons Rally',
+            'slug' => 'private-icons-rally',
+            'creator_id' => $creator->id,
+            'visibility' => 'public',
+            'participant_display_mode' => 'count_only',
+        ]);
+
+        $loc = StampLocation::create([
+            'stamp_rally_id' => $countOnlyRally->id,
+            'name' => 'Private Spot',
+            'latitude' => 35.681236,
+            'longitude' => 139.767125,
+            'radius_meters' => 100,
+        ]);
+
+        $otherRally = StampRally::create([
+            'title' => 'Other Public Rally',
+            'slug' => 'other-public-rally',
+            'creator_id' => $creator->id,
+            'visibility' => 'public',
+            'participant_display_mode' => 'icons',
+        ]);
+
+        // count_only forbids icon pagination APIs
+        $this->getJson("/rallies/{$countOnlyRally->slug}/participants")->assertStatus(403);
+        $this->getJson("/rallies/{$countOnlyRally->slug}/locations/{$loc->id}/checkins")->assertStatus(403);
+
+        // Mismatched rally & location returns 404
+        $this->getJson("/rallies/{$otherRally->slug}/locations/{$loc->id}/checkins")->assertStatus(404);
     }
 
     public function test_location_checkin_counts_are_cached_and_invalidated_on_checkin(): void

@@ -227,7 +227,8 @@ class SampleDataSeeder extends Seeder
         }
 
         // Seed 1 initial stamp for @participant on 2026 rally
-        $firstLoc = $rally2026->locations()->first();
+        $locations2026 = $rally2026->locations()->orderBy('sort_order')->get();
+        $firstLoc = $locations2026->first();
         if ($firstLoc) {
             RallyParticipation::firstOrCreate(
                 ['user_id' => $player->id, 'stamp_rally_id' => $rally2026->id],
@@ -245,6 +246,87 @@ class SampleDataSeeder extends Seeder
                     'stamped_at' => now()->subDays(3),
                 ]
             );
+        }
+
+        // Seed 25 sample participants & check-ins for testing 10-by-10 icon pagination
+        $sampleProfiles = [
+            ['handle' => 'sample_alice', 'name' => 'Alice'],
+            ['handle' => 'sample_bob', 'name' => 'Bob'],
+            ['handle' => 'sample_chihiro', 'name' => 'Chihiro'],
+            ['handle' => 'sample_daiki', 'name' => 'Daiki'],
+            ['handle' => 'sample_emi', 'name' => 'Emi'],
+            ['handle' => 'sample_fumiya', 'name' => 'Fumiya'],
+            ['handle' => 'sample_gaku', 'name' => 'Gaku'],
+            ['handle' => 'sample_haruka', 'name' => 'Haruka'],
+            ['handle' => 'sample_ichiro', 'name' => 'Ichiro'],
+            ['handle' => 'sample_jun', 'name' => 'Jun'],
+            ['handle' => 'sample_kana', 'name' => 'Kana'],
+            ['handle' => 'sample_leo', 'name' => 'Leo'],
+            ['handle' => 'sample_mika', 'name' => 'Mika'],
+            ['handle' => 'sample_naoki', 'name' => 'Naoki'],
+            ['handle' => 'sample_ori', 'name' => 'Ori'],
+            ['handle' => 'sample_piro', 'name' => 'Piro'],
+            ['handle' => 'sample_qtaro', 'name' => 'Qtaro'],
+            ['handle' => 'sample_rina', 'name' => 'Rina'],
+            ['handle' => 'sample_sota', 'name' => 'Sota'],
+            ['handle' => 'sample_tomo', 'name' => 'Tomo'],
+            ['handle' => 'sample_umi', 'name' => 'Umi'],
+            ['handle' => 'sample_vivi', 'name' => 'Vivi'],
+            ['handle' => 'sample_wataru', 'name' => 'Wataru'],
+            ['handle' => 'sample_yuki', 'name' => 'Yuki'],
+            ['handle' => 'sample_zoe', 'name' => 'Zoe'],
+        ];
+
+        $samplePassword = Hash::make('password');
+        $venue1 = $locations2026->get(0); // Tokyo: +25 (total 26)
+        $venue2 = $locations2026->get(1); // Kansai: 15
+        $venue3 = $locations2026->get(2); // Fukuoka: 8
+        $venue4 = $locations2026->get(3); // Odawara: 3
+
+        foreach ($sampleProfiles as $index => $profile) {
+            $sampleUser = User::updateOrCreate(
+                ['handle' => $profile['handle']],
+                [
+                    'name' => $profile['name'],
+                    'email' => $profile['handle'] . '@example.com',
+                    'password' => $samplePassword,
+                ]
+            );
+
+            $timestamp = now()->subHours(48 - $index);
+
+            RallyParticipation::firstOrCreate(
+                ['user_id' => $sampleUser->id, 'stamp_rally_id' => $rally2026->id],
+                ['joined_at' => $timestamp]
+            );
+
+            $checkins = [];
+            if ($venue1) {
+                $checkins[] = $venue1;
+            }
+            if ($venue2 && $index < 15) {
+                $checkins[] = $venue2;
+            }
+            if ($venue3 && $index < 8) {
+                $checkins[] = $venue3;
+            }
+            if ($venue4 && $index < 3) {
+                $checkins[] = $venue4;
+            }
+
+            foreach ($checkins as $vOffset => $loc) {
+                UserStamp::firstOrCreate(
+                    ['user_id' => $sampleUser->id, 'stamp_location_id' => $loc->id],
+                    [
+                        'stamp_rally_id' => $rally2026->id,
+                        'checkin_lat' => $loc->latitude,
+                        'checkin_lng' => $loc->longitude,
+                        'accuracy_meters' => 10,
+                        'distance_meters' => 0,
+                        'stamped_at' => $timestamp->copy()->addMinutes($vOffset * 5),
+                    ]
+                );
+            }
         }
     }
 }

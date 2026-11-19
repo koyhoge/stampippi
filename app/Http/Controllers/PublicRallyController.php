@@ -25,7 +25,7 @@ class PublicRallyController extends Controller
         }
 
         $devUsers = User::isDevToolsEnabled()
-            ? User::orderBy('id')->get()
+            ? User::where('handle', 'not like', 'sample_%')->orderBy('id')->get()
             : collect();
 
         return view('public.home', compact('devUsers'));
@@ -127,8 +127,9 @@ class PublicRallyController extends Controller
         if ($rally->showsParticipantIcons()) {
             $recentParticipants = $rally->participations()
                 ->with('user')
-                ->latest('joined_at')
-                ->limit(30)
+                ->orderByDesc('joined_at')
+                ->orderByDesc('id')
+                ->limit(10)
                 ->get()
                 ->pluck('user')
                 ->filter()
@@ -147,12 +148,13 @@ class PublicRallyController extends Controller
         if ($rally->showsParticipantIcons()) {
             $locationRecentUsers = UserStamp::where('stamp_rally_id', $rally->id)
                 ->with('user')
-                ->latest('stamped_at')
+                ->orderByDesc('stamped_at')
+                ->orderByDesc('id')
                 ->limit(200)
                 ->get()
                 ->groupBy('stamp_location_id')
                 ->map(function ($stamps) {
-                    return $stamps->pluck('user')->filter()->unique('id')->take(8)->values();
+                    return $stamps->pluck('user')->filter()->unique('id')->take(10)->values();
                 });
         }
 
@@ -166,6 +168,103 @@ class PublicRallyController extends Controller
             'locationCheckinCounts',
             'locationRecentUsers'
         ));
+    }
+
+    public function rallyParticipants(Request $request, StampRally $rally): JsonResponse
+    {
+        if ($rally->visibility === 'draft' && (! $request->user() || ! $request->user()->canManageRally($rally))) {
+            abort(404);
+        }
+
+        if (! $rally->showsParticipantIcons()) {
+            abort(403);
+        }
+
+        $offset = max(0, (int) $request->query('offset', 0));
+        $limit = min(50, max(1, (int) $request->query('limit', 10)));
+
+        $total = $rally->participations()->count();
+        $users = $rally->participations()
+            ->with('user')
+            ->orderByDesc('joined_at')
+            ->orderByDesc('id')
+            ->offset($offset)
+            ->limit($limit)
+            ->get()
+            ->pluck('user')
+            ->filter()
+            ->map(fn (User $user) => $this->formatParticipantIconData($rally, $user))
+            ->values();
+
+        $nextOffset = $offset + $users->count();
+        $remaining = max(0, $total - $nextOffset);
+
+        return response()->json([
+            'users' => $users,
+            'total' => $total,
+            'offset' => $offset,
+            'next_offset' => $nextOffset,
+            'has_more' => $remaining > 0 && $users->isNotEmpty(),
+            'remaining' => $remaining,
+        ]);
+    }
+
+    public function locationCheckins(Request $request, StampRally $rally, StampLocation $location): JsonResponse
+    {
+        if ($rally->visibility === 'draft' && (! $request->user() || ! $request->user()->canManageRally($rally))) {
+            abort(404);
+        }
+
+        if ($location->stamp_rally_id !== $rally->id) {
+            abort(404);
+        }
+
+        if (! $rally->showsParticipantIcons()) {
+            abort(403);
+        }
+
+        $offset = max(0, (int) $request->query('offset', 0));
+        $limit = min(50, max(1, (int) $request->query('limit', 10)));
+
+        $baseQuery = UserStamp::where('stamp_rally_id', $rally->id)
+            ->where('stamp_location_id', $location->id);
+
+        $total = (clone $baseQuery)->count();
+        $users = (clone $baseQuery)
+            ->with('user')
+            ->orderByDesc('stamped_at')
+            ->orderByDesc('id')
+            ->offset($offset)
+            ->limit($limit)
+            ->get()
+            ->pluck('user')
+            ->filter()
+            ->map(fn (User $user) => $this->formatParticipantIconData($rally, $user))
+            ->values();
+
+        $nextOffset = $offset + $users->count();
+        $remaining = max(0, $total - $nextOffset);
+
+        return response()->json([
+            'users' => $users,
+            'total' => $total,
+            'offset' => $offset,
+            'next_offset' => $nextOffset,
+            'has_more' => $remaining > 0 && $users->isNotEmpty(),
+            'remaining' => $remaining,
+        ]);
+    }
+
+    private function formatParticipantIconData(StampRally $rally, User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'handle' => $user->handle,
+            'avatar_url' => $user->avatarUrl(),
+            'initial' => strtoupper(mb_substr($user->name, 0, 1)),
+            'profile_url' => route('rallies.participants.show', [$rally, $user]),
+        ];
     }
 
     public function showParticipant(Request $request, StampRally $rally, User $user): View

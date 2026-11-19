@@ -14,6 +14,8 @@ Route::get('/privacy', [PublicRallyController::class, 'privacy'])->name('privacy
 Route::get('/groups/{group:slug}', [PublicRallyController::class, 'showGroup'])->name('groups.show');
 Route::get('/series/{series:slug}', [PublicRallyController::class, 'showSeries'])->name('series.show');
 Route::get('/rallies/{rally:slug}', [PublicRallyController::class, 'showRally'])->name('rallies.show');
+Route::get('/rallies/{rally:slug}/participants', [PublicRallyController::class, 'rallyParticipants'])->middleware('throttle:120,1')->name('rallies.participants.index');
+Route::get('/rallies/{rally:slug}/locations/{location}/checkins', [PublicRallyController::class, 'locationCheckins'])->middleware('throttle:120,1')->name('rallies.locations.checkins.index');
 Route::get('/rallies/{rally:slug}/participants/{user:handle}', [PublicRallyController::class, 'showParticipant'])->name('rallies.participants.show')->withoutScopedBindings();
 
 // Authentication (OAuth + Local Dev Login only; email/password auth removed)

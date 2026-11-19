@@ -18,7 +18,7 @@ class AuthController extends Controller
     public function showLogin(): View
     {
         $devUsers = User::isDevToolsEnabled()
-            ? User::orderBy('id')->get()
+            ? User::where('handle', 'not like', 'sample_%')->orderBy('id')->get()
             : collect();
 
         return view('auth.login', compact('devUsers'));

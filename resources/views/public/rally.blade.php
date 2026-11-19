@@ -167,18 +167,19 @@
         </div>
 
         <!-- Rally Participants Section -->
-        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-2">
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <span class="font-bold text-slate-700 flex items-center gap-1.5">
                     <span>👥 参加者:</span>
                     <span class="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-extrabold">{{ $totalParticipantsCount }}人</span>
                 </span>
             </div>
 
-            @if ($rally->showsParticipantIcons() && $recentParticipants->isNotEmpty())
-                <div class="flex items-center gap-1.5 flex-wrap">
+            @if ($rally->showsParticipantIcons() && ($recentParticipants->isNotEmpty() || $totalParticipantsCount > 0))
+                <div id="rally-participants-list" class="flex items-center gap-1.5 flex-wrap">
                     @foreach ($recentParticipants as $pUser)
                         <a href="{{ route('rallies.participants.show', [$rally, $pUser]) }}"
+                           data-user-id="{{ $pUser->id }}"
                            class="relative group transition transform hover:scale-110"
                            title="{{ $pUser->name }} ({{ '@' . $pUser->handle }}) の参加状態を見る">
                             @if ($pUser->avatarUrl())
@@ -191,7 +192,22 @@
                         </a>
                     @endforeach
                     @if ($totalParticipantsCount > $recentParticipants->count())
-                        <span class="text-[11px] text-slate-400 font-semibold ml-1">他 {{ $totalParticipantsCount - $recentParticipants->count() }}人</span>
+                        @php
+                            $remainingParticipants = $totalParticipantsCount - $recentParticipants->count();
+                            $nextParticipantsBatch = min(10, $remainingParticipants);
+                        @endphp
+                        <button type="button"
+                                onclick="loadMoreUsers(this)"
+                                data-url="{{ route('rallies.participants.index', $rally) }}"
+                                data-container="rally-participants-list"
+                                data-offset="{{ $recentParticipants->count() }}"
+                                data-limit="10"
+                                data-size="md"
+                                data-label-prefix="参加者"
+                                aria-label="参加者をさらに{{ $nextParticipantsBatch }}人表示（残り{{ $remainingParticipants }}人）"
+                                class="inline-flex items-center h-7 px-2.5 rounded-full bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 font-bold text-[11px] border border-indigo-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+                            +{{ $nextParticipantsBatch }}人
+                        </button>
                     @endif
                 </div>
             @endif
@@ -289,15 +305,16 @@
                             $locStampsCount = $locationCheckinCounts->get($location->id, 0);
                             $locRecentUsers = $locationRecentUsers->get($location->id, collect());
                         @endphp
-                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px] text-slate-500">
-                            <span class="font-semibold flex items-center gap-1 shrink-0">
+                        <div class="pt-2 border-t border-slate-100 flex items-start justify-between gap-2 text-[11px] text-slate-500">
+                            <span class="font-semibold flex items-center gap-1 shrink-0 mt-0.5">
                                 <span>📍</span>
                                 <span>{{ $locStampsCount }}人がチェックイン</span>
                             </span>
-                            @if ($rally->showsParticipantIcons() && $locRecentUsers->isNotEmpty())
-                                <div class="flex items-center gap-1 flex-wrap justify-end">
+                            @if ($rally->showsParticipantIcons() && ($locRecentUsers->isNotEmpty() || $locStampsCount > 0))
+                                <div id="location-checkins-list-{{ $location->id }}" class="flex items-center gap-1 flex-wrap justify-end">
                                     @foreach ($locRecentUsers as $cUser)
                                         <a href="{{ route('rallies.participants.show', [$rally, $cUser]) }}"
+                                           data-user-id="{{ $cUser->id }}"
                                            title="{{ $cUser->name }} ({{ '@' . $cUser->handle }}) の参加状態を見る"
                                            class="relative group transition transform hover:scale-110">
                                             @if ($cUser->avatarUrl())
@@ -310,7 +327,22 @@
                                         </a>
                                     @endforeach
                                     @if ($locStampsCount > $locRecentUsers->count())
-                                        <span class="text-[10px] text-slate-400 font-semibold ml-0.5">+{{ $locStampsCount - $locRecentUsers->count() }}</span>
+                                        @php
+                                            $locRemaining = $locStampsCount - $locRecentUsers->count();
+                                            $locNextBatch = min(10, $locRemaining);
+                                        @endphp
+                                        <button type="button"
+                                                onclick="loadMoreUsers(this)"
+                                                data-url="{{ route('rallies.locations.checkins.index', [$rally, $location]) }}"
+                                                data-container="location-checkins-list-{{ $location->id }}"
+                                                data-offset="{{ $locRecentUsers->count() }}"
+                                                data-limit="10"
+                                                data-size="sm"
+                                                data-label-prefix="{{ $location->name }}のチェックインユーザー"
+                                                aria-label="{{ $location->name }}のチェックインユーザーをさらに{{ $locNextBatch }}人表示（残り{{ $locRemaining }}人）"
+                                                class="inline-flex items-center h-5 px-2 rounded-full bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 font-bold text-[10px] border border-indigo-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+                                            +{{ $locNextBatch }}人
+                                        </button>
                                     @endif
                                 </div>
                             @endif
@@ -733,6 +765,95 @@
             }
             showFeedbackBanner(false, errMsg);
         });
+    }
+
+    async function loadMoreUsers(btn) {
+        if (!btn || btn.disabled) return;
+
+        const baseUrl = btn.dataset.url;
+        const containerId = btn.dataset.container;
+        const offset = parseInt(btn.dataset.offset || '0', 10);
+        const limit = parseInt(btn.dataset.limit || '10', 10);
+        const size = btn.dataset.size || 'sm';
+        const labelPrefix = btn.dataset.labelPrefix || 'ユーザー';
+        const container = document.getElementById(containerId);
+
+        if (!baseUrl || !container) return;
+
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.textContent = '読込中...';
+
+        try {
+            const url = new URL(baseUrl, window.location.origin);
+            url.searchParams.set('offset', String(offset));
+            url.searchParams.set('limit', String(limit));
+
+            const res = await fetch(url.toString(), {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin',
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to load users');
+            }
+
+            const data = await res.json();
+            const existingIds = new Set(
+                Array.from(container.querySelectorAll('[data-user-id]')).map(el => el.dataset.userId)
+            );
+
+            const isMd = size === 'md';
+            const imgClass = isMd
+                ? 'w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm'
+                : 'w-5 h-5 rounded-full object-cover border border-white shadow-xs';
+            const fallbackClass = isMd
+                ? 'w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px] border-2 border-white shadow-sm'
+                : 'w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[8px] border border-white shadow-xs';
+
+            (data.users || []).forEach(user => {
+                const uid = String(user.id);
+                if (existingIds.has(uid)) return;
+                existingIds.add(uid);
+
+                const link = document.createElement('a');
+                link.href = user.profile_url;
+                link.dataset.userId = uid;
+                link.className = 'relative group transition transform hover:scale-110';
+                link.title = `${user.name} (@${user.handle}) の参加状態を見る`;
+
+                if (user.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = user.avatar_url;
+                    img.alt = user.name;
+                    img.className = imgClass;
+                    link.appendChild(img);
+                } else {
+                    const fallback = document.createElement('div');
+                    fallback.className = fallbackClass;
+                    fallback.textContent = user.initial || '?';
+                    link.appendChild(fallback);
+                }
+
+                btn.before(link);
+            });
+
+            const nextOffset = Number.isFinite(data.next_offset) ? data.next_offset : offset + (data.users || []).length;
+            const remaining = Number.isFinite(data.remaining) ? data.remaining : 0;
+
+            if (data.has_more && remaining > 0) {
+                const nextBatch = Math.min(limit, remaining);
+                btn.dataset.offset = String(nextOffset);
+                btn.setAttribute('aria-label', `${labelPrefix}をさらに${nextBatch}人表示（残り${remaining}人）`);
+                btn.textContent = `+${nextBatch}人`;
+                btn.disabled = false;
+            } else {
+                btn.remove();
+            }
+        } catch (err) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     }
 </script>
 @endpush
